@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { distance as levenshteinDistance } from 'fastest-levenshtein'
-import * as natural from 'natural'
+import winkTokenizer from 'wink-tokenizer'
+import porterStemmer from 'wink-porter2-stemmer'
 
 // Initialize tokenizer and stemmer
-const tokenizer = new natural.WordTokenizer()
-const stemmer = natural.PorterStemmer
+const tokenizer = new winkTokenizer()
+const stemmer = porterStemmer
 
 // Define categorized important skills with their variations
 const HARD_SKILLS = new Map([
@@ -118,10 +119,10 @@ const EDUCATION_TERMS = new Map([
 
 // Function to get the canonical form of a skill
 function getCanonicalForm(word: string, skillMap: Map<string, string[]>): string {
-  const stemmedWord = stemmer.stem(word)
+  const stemmedWord = stemmer(word.toLowerCase())
   for (const [skill, variations] of skillMap) {
-    if (stemmedWord === stemmer.stem(skill)) return skill
-    if (variations.some((v: string) => stemmedWord === stemmer.stem(v))) return skill
+    if (stemmedWord === stemmer(skill.toLowerCase())) return skill
+    if (variations.some((v: string) => stemmedWord === stemmer(v.toLowerCase()))) return skill
   }
   return word
 }
@@ -163,10 +164,10 @@ function consolidateTerms(terms: Array<{skill: string, context: string, category
 
 // Function to check if a word matches any variations of a skill
 function matchesSkillVariations(word: string, skillMap: Map<string, string[]>): boolean {
-  const stemmedWord = stemmer.stem(word)
+  const stemmedWord = stemmer(word.toLowerCase())
   for (const [skill, variations] of skillMap) {
-    if (stemmedWord === stemmer.stem(skill)) return true
-    if (variations.some((v: string) => stemmedWord === stemmer.stem(v))) return true
+    if (stemmedWord === stemmer(skill.toLowerCase())) return true
+    if (variations.some((v: string) => stemmedWord === stemmer(v.toLowerCase()))) return true
   }
   return false
 }
@@ -192,7 +193,11 @@ function extractSkillsWithContext(text: string): Array<{skill: string, context: 
   const skills: Array<{skill: string, context: string, category: string}> = []
   
   sentences.forEach(sentence => {
-    const words = tokenizer.tokenize(sentence.toLowerCase()) || []
+    const tokens = tokenizer.tokenize(sentence.toLowerCase())
+    const words = tokens
+      .filter(token => token.tag === 'word' || token.tag === 'email' || token.tag === 'hashtag')
+      .map(token => token.value)
+    
     words.forEach((word: string, index: number) => {
       let category = ""
       let canonicalSkill = ""
