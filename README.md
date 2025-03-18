@@ -5,6 +5,15 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
 [![Hugging Face](https://img.shields.io/badge/HuggingFace-Inference-yellow?style=flat&logo=huggingface)](https://huggingface.co/)
 
+## Project Scope
+
+- **AI-Powered Analysis**: Leverages advanced NLP models to analyze resumes against job descriptions
+- **Real-time Optimization**: Provides instant feedback and suggestions for resume improvement
+- **Multi-category Scoring**: Evaluates resumes across key areas like skills, experience, and education
+- **Smart Keyword Matching**: Identifies relevant keywords and their contextual usage
+- **Performance Optimized**: Built with Next.js 14 and React Server Components for optimal performance
+- **Enterprise Ready**: Implements robust security measures and scalable architecture
+
 ## Technical Architecture
 
 Resumate is an advanced resume optimization platform leveraging state-of-the-art Natural Language Processing (NLP) and Machine Learning algorithms. The application implements a sophisticated microservices architecture with serverless computing paradigms, ensuring optimal scalability and performance.
