@@ -42,7 +42,7 @@ export default function Home() {
                     onLoopDone={() => console.log('Done with loop!')}
                   />
                 </div>
-                <Link href="/GetStarted" legacyBehavior>
+                <Link href="/signup" legacyBehavior>
                   <a className="ml-4 px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600 focus:outline-none whitespace-nowrap no-underline">
                     Get Started
                   </a>
@@ -50,7 +50,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="lg:w-5/12 flex justify-center lg:justify-start mt-2">
+          <div className="lg:w-7/12 flex justify-center lg:justify-end">
             <Image src="/HomePageGraphic.svg" alt="SVG illustration" width={500} height={400} />
           </div>
         </div>
