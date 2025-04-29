@@ -83,7 +83,7 @@ export function AuthForm() {
             </div>
           )}
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <Button type="submit" className="w-full bg-black hover:bg-black/90 text-white" disabled={loading}>
+          <Button type="submit" className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white" disabled={loading}>
             {loading 
               ? (isLoginView ? 'Logging In...' : 'Creating Account...') 
               : (isLoginView ? 'Log In' : 'Create Account')}
