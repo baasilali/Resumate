@@ -2,10 +2,19 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useUser } from '../hooks/useUser';
+import { auth } from '../firebase/config';
+import { signOut } from 'firebase/auth';
 
 export default function NavBarGetStarted() {
-  const scrollToSection = (id) => {
-    document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+  const { user, loading } = useUser();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
@@ -24,11 +33,27 @@ export default function NavBarGetStarted() {
             Contact Us
           </a>
         </div>
-        <div className="flex space-x-4">
-          <Link href="/GetStarted" legacyBehavior>
-            <a className="px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600 no-underline">Get Started</a>
-          </Link>
-        </div>
+        {!loading && (
+          <div className="flex space-x-4">
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-gray-600">{user.email}</span>
+                <button
+                  onClick={handleSignOut}
+                  className="px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link href="/signin" legacyBehavior>
+                <a className="px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600 no-underline">
+                  Sign In
+                </a>
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );
