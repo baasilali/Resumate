@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Typewriter } from 'react-simple-typewriter';
 import { PricingSection } from '@/components/pricing/pricing-section';
 import ContactSection from '@/components/contact/contact-section';
+import { FileText, SlidersHorizontal, Sparkles, ShieldCheck } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -56,12 +57,44 @@ export default function Home() {
             <Image src="/HomePageGraphic.svg" alt="SVG illustration" width={500} height={400} />
           </div>
         </div>
-        <div id="features" className="w-full text-center mt-0">
-          <div className="flex flex-col items-center mt-10">
-            <h2 className="text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-0">
-              Features
+        <div id="features" className="w-full py-24 bg-white">
+          <div className="max-w-5xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-16">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">Features</span>
             </h2>
-            <Image src="/Features.svg" alt="Features illustration" width={1800} height={1300} className="mt-[-200px]" />
+            <div className="relative flex items-center justify-center">
+              {/* Minimal Oval Burst Gradient */}
+              <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-0 w-[140%] h-[110%]">
+                <div className="w-full h-full rounded-full bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(236,72,153,0.18)_0%,rgba(168,85,247,0.13)_60%,transparent_100%)]"></div>
+              </div>
+              {/* Feature Cards Grid */}
+              <div className="relative z-10 w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+                {/* Feature 1 */}
+                <div className="group bg-white rounded-xl border border-gray-100 shadow-sm p-8 flex flex-col items-center transition-all hover:shadow-lg hover:border-pink-400">
+                  <FileText className="text-pink-500 mb-6" size={36} />
+                  <h3 className="font-semibold text-lg mb-3 text-center">Input Images & PDFs</h3>
+                  <p className="text-gray-500 text-sm text-center">Upload your resume as an image or PDF for instant parsing.</p>
+                </div>
+                {/* Feature 2 */}
+                <div className="group bg-white rounded-xl border border-gray-100 shadow-sm p-8 flex flex-col items-center transition-all hover:shadow-lg hover:border-purple-400">
+                  <SlidersHorizontal className="text-purple-500 mb-6" size={36} />
+                  <h3 className="font-semibold text-lg mb-3 text-center">Role-Specific Tuning</h3>
+                  <p className="text-gray-500 text-sm text-center">Tailor your resume for specific jobs with AI-powered suggestions.</p>
+                </div>
+                {/* Feature 3 */}
+                <div className="group bg-white rounded-xl border border-gray-100 shadow-sm p-8 flex flex-col items-center transition-all hover:shadow-lg hover:border-pink-400">
+                  <Sparkles className="text-pink-500 mb-6" size={36} />
+                  <h3 className="font-semibold text-lg mb-3 text-center">Premium Templates</h3>
+                  <p className="text-gray-500 text-sm text-center">Choose from modern, recruiter-approved templates.</p>
+                </div>
+                {/* Feature 4 */}
+                <div className="group bg-white rounded-xl border border-gray-100 shadow-sm p-8 flex flex-col items-center transition-all hover:shadow-lg hover:border-purple-400">
+                  <ShieldCheck className="text-purple-500 mb-6" size={36} />
+                  <h3 className="font-semibold text-lg mb-3 text-center">Privacy & Security</h3>
+                  <p className="text-gray-500 text-sm text-center">Your data is encrypted and never shared without your consent.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div id="pricing" className="w-full">
@@ -69,7 +102,7 @@ export default function Home() {
         </div>
         <div id="contact" className="w-full">
           <ContactSection />
-        </div>
+          </div>
       </main>
     </>
   );
