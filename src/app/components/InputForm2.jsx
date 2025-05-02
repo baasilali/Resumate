@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 export default function InputForm2({ setProgress, progress, onComplete }) {
@@ -19,9 +19,16 @@ export default function InputForm2({ setProgress, progress, onComplete }) {
     'Mobile App Development'
   ];
 
+  const updateProgress = useCallback(() => {
+    const initialProgress = 25; // Initial progress before starting InputForm2
+    const courseCount = courses.length;
+    const additionalProgress = Math.min((courseCount / 4) * 25, 25); // Additional progress up to 25%
+    setProgress(initialProgress + additionalProgress);
+  }, [courses, setProgress]);
+
   useEffect(() => {
     updateProgress();
-  }, [courses, updateProgress]);
+  }, [updateProgress]);
 
   const handleCourseChange = (e) => {
     setCourseInput(e.target.value);
@@ -37,13 +44,6 @@ export default function InputForm2({ setProgress, progress, onComplete }) {
   const removeCourse = (indexToRemove) => {
     const newCourses = courses.filter((_, index) => index !== indexToRemove);
     setCourses(newCourses);
-  };
-
-  const updateProgress = () => {
-    const initialProgress = 25; // Initial progress before starting InputForm2
-    const courseCount = courses.length;
-    const additionalProgress = Math.min((courseCount / 4) * 25, 25); // Additional progress up to 25%
-    setProgress(initialProgress + additionalProgress);
   };
 
   const handleSubmit = (e) => {

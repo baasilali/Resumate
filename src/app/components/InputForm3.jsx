@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 export default function InputForm3({ setProgress, progress, onComplete }) {
@@ -6,17 +6,17 @@ export default function InputForm3({ setProgress, progress, onComplete }) {
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    updateProgress();
-  }, [jobTitle, description, updateProgress]);
-
-  const updateProgress = () => {
+  const updateProgress = useCallback(() => {
     let filledFields = 0;
     if (jobTitle) filledFields++;
     if (description) filledFields++;
     const additionalProgress = (filledFields / 2) * 25; // Each field is worth 12.5% (up to an additional 25%)
     setProgress(progress => Math.min(progress + additionalProgress, 75)); // Total progress can go up to 75%
-  };
+  }, [jobTitle, description, setProgress]);
+
+  useEffect(() => {
+    updateProgress();
+  }, [updateProgress]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

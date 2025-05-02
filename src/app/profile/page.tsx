@@ -59,7 +59,7 @@ export default function Profile() {
                 {showPasswordReset && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-md">
                     <p className="text-sm text-gray-600 mb-4">
-                      We'll send a password reset link to your email address.
+                      We&apos;ll send a password reset link to your email address.
                     </p>
                     <button
                       onClick={handlePasswordReset}
