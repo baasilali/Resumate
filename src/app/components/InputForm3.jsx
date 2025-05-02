@@ -8,7 +8,7 @@ export default function InputForm3({ setProgress, progress, onComplete }) {
 
   useEffect(() => {
     updateProgress();
-  }, [jobTitle, description]);
+  }, [jobTitle, description, updateProgress]);
 
   const updateProgress = () => {
     let filledFields = 0;

@@ -21,7 +21,7 @@ export default function InputForm2({ setProgress, progress, onComplete }) {
 
   useEffect(() => {
     updateProgress();
-  }, [courses]);
+  }, [courses, updateProgress]);
 
   const handleCourseChange = (e) => {
     setCourseInput(e.target.value);
