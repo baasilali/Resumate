@@ -4,6 +4,7 @@ import {
   signInWithPopup, 
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   UserCredential
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
@@ -12,6 +13,7 @@ import { useRouter } from 'next/navigation';
 export const useAuth = () => {
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const router = useRouter();
 
   const signInWithEmail = async (email: string, password: string): Promise<void> => {
@@ -60,11 +62,30 @@ export const useAuth = () => {
     }
   };
 
+  const resetPassword = async (email: string): Promise<void> => {
+    try {
+      setLoading(true);
+      setError('');
+      await sendPasswordResetEmail(auth, email);
+      setResetEmailSent(true);
+    } catch (err: any) {
+      if (err.code === 'auth/user-not-found') {
+        setError('No account exists with this email address');
+      } else {
+        setError(err.message || 'An error occurred while resetting password');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     error,
     loading,
+    resetEmailSent,
     signInWithEmail,
     signInWithGoogle,
-    signUpWithEmail
+    signUpWithEmail,
+    resetPassword
   };
 }; 
