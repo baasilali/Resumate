@@ -4,6 +4,8 @@ import NavBar from './components/NavBar';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Typewriter } from 'react-simple-typewriter';
+import { PricingSection } from '@/components/pricing/pricing-section';
+import ContactSection from '@/components/contact/contact-section';
 
 export default function Home() {
   return (
@@ -62,14 +64,12 @@ export default function Home() {
             <Image src="/Features.svg" alt="Features illustration" width={1800} height={1300} className="mt-[-200px]" />
           </div>
         </div>
-        {/* <div id="pricing" className="w-full text-center mt-40">
-          <div className="flex flex-col items-center mt-10">
-            <h2 className="text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-0">
-              Pricing
-            </h2>
-            <Image src="/Pricing.svg" alt="Features illustration" width={1800} height={1300} className="mt-[-200px]" />
-          </div>
-        </div> */}
+        <div id="pricing" className="w-full">
+          <PricingSection />
+        </div>
+        <div id="contact" className="w-full">
+          <ContactSection />
+        </div>
       </main>
     </>
   );

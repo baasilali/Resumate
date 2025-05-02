@@ -27,9 +27,12 @@ export default function NavBar() {
           <button onClick={() => scrollToSection('features')} className="text-gray-600 hover:text-gray-900 cursor-pointer">
             Features
           </button>
-          <a href="mailto:resumateservice@gmail.com" className="text-gray-600 hover:text-gray-900 no-underline">
-            Contact Us
-          </a>
+          <button onClick={() => scrollToSection('pricing')} className="text-gray-600 hover:text-gray-900 cursor-pointer">
+            Pricing
+          </button>
+          <button onClick={() => scrollToSection('contact')} className="text-gray-600 hover:text-gray-900 cursor-pointer">
+            Contact
+          </button>
         </div>
         {isLandingPage && (
           <div className="flex space-x-4">
