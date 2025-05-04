@@ -29,12 +29,13 @@ export const useAuth = () => {
     }
   };
 
-  const signUpWithEmail = async (email: string, password: string): Promise<void> => {
+  const signUpWithEmail = async (email: string, password: string): Promise<string | undefined> => {
     try {
       setLoading(true);
       setError('');
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       router.push('/');
+      return userCredential.user.uid;
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
         setError('An account with this email already exists');
@@ -43,6 +44,7 @@ export const useAuth = () => {
       } else {
         setError(err.message || 'An error occurred during sign up');
       }
+      return undefined;
     } finally {
       setLoading(false);
     }

@@ -22,7 +22,39 @@ export default function SignUp() {
       return;
     }
 
-    await signUpWithEmail(email, password);
+    const userId = await signUpWithEmail(email, password);
+
+    if (userId) {
+      console.log('Sign up successful! User ID:', userId);
+      
+      // Make POST request to backend
+      try {
+        const response = await fetch('http://localhost:3001/api/v1/user/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            firebase_id: userId,
+            email: email, // email is available from component state
+          }),
+        });
+
+        if (!response.ok) {
+          // Handle non-successful responses (e.g., 4xx, 5xx)
+          const errorData = await response.json();
+          console.error('Error creating user in backend:', response.status, errorData);
+          // Optionally set an error state here to show feedback to the user
+        } else {
+          const result = await response.json();
+          console.log('Backend user creation successful:', result);
+          // Handle successful backend response (e.g., maybe navigate or show success message)
+        }
+      } catch (error) {
+        console.error('Network error or issue making POST request:', error);
+        // Optionally set an error state here
+      }
+    }
   };
 
   return (
