@@ -1,11 +1,16 @@
 'use client';
 
-import NavBar from './components/NavBar';
 import Image from 'next/image';
 import Link from 'next/link';
+import NavBar from './components/NavBar';
 import { Typewriter } from 'react-simple-typewriter';
+import { useAuth } from './hooks/useAuth';
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
+  const getStartedLink = loading ? '#' : user ? '/GetStarted' : '/signin';
+
   return (
     <>
       <NavBar />
@@ -42,8 +47,8 @@ export default function Home() {
                     onLoopDone={() => console.log('Done with loop!')}
                   />
                 </div>
-                <Link href="/GetStarted" legacyBehavior>
-                  <a className="ml-4 px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600 focus:outline-none whitespace-nowrap no-underline">
+                <Link href={getStartedLink} legacyBehavior>
+                  <a className={`ml-4 px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600 focus:outline-none whitespace-nowrap no-underline ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     Get Started
                   </a>
                 </Link>

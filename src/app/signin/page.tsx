@@ -1,20 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useAuth } from '../hooks/useAuth';
 import NavBarGetStarted from '../components/NavBarGetStarted';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { error, loading, signInWithEmail, signInWithGoogle } = useAuth();
+  const { user, loading, error, signInWithEmail, signInWithGoogle } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await signInWithEmail(email, password);
   };
+
+  if (loading || user) {
+    return null;
+  }
 
   return (
     <>
@@ -128,4 +140,4 @@ export default function SignIn() {
       </div>
     </>
   );
-} 
+}
