@@ -1,8 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { HfInference } from '@huggingface/inference'
-
-// Initialize Hugging Face client
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY)
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,19 +32,10 @@ Please provide an optimized version of the resume that addresses these issues wh
 
 Optimized Resume:`
 
-    // Use FLAN-T5 model for optimization
-    const response = await hf.textGeneration({
-      model: 'google/flan-t5-base',
-      inputs: prompt,
-      parameters: {
-        max_length: 1000,
-        temperature: 0.7,
-        top_p: 0.95,
-        repetition_penalty: 1.2,
-      }
-    })
-
-    return NextResponse.json({ optimizedResume: response.generated_text }, { status: 200 })
+    // TODO: Replace with your preferred LLM or optimization logic
+    // const response = await hf.textGeneration({ ... })
+    // return NextResponse.json({ optimizedResume: response.generated_text }, { status: 200 })
+    return NextResponse.json({ optimizedResume: "[Optimized resume would be generated here]" }, { status: 200 })
   } catch (error) {
     console.error("❌ API Error:", error)
     return NextResponse.json(
