@@ -1,20 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   signInWithEmailAndPassword, 
   signInWithPopup, 
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  UserCredential
+  UserCredential,
+  onAuthStateChanged, 
+  User 
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { useRouter } from 'next/navigation';
 
 export const useAuth = () => {
   const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const signInWithEmail = async (email: string, password: string): Promise<void> => {
     try {
@@ -34,6 +47,34 @@ export const useAuth = () => {
       setLoading(true);
       setError('');
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userId = userCredential.user.uid;
+      try {
+        const response = await fetch('http://localhost:3001/api/v1/user/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            firebase_id: userId,
+            email: email, // email is available from component state
+          }),
+        });
+
+        if (!response.ok) {
+          // Handle non-successful responses (e.g., 4xx, 5xx)
+          const errorData = await response.json();
+          console.error('Error creating user in backend:', response.status, errorData);
+          // Optionally set an error state here to show feedback to the user
+        } else {
+          const result = await response.json();
+          console.log('Backend user creation successful:', result);
+          // Handle successful backend response (e.g., maybe navigate or show success message)
+        }
+      } catch (error) {
+        console.error('Network error or issue making POST request:', error);
+        // Optionally set an error state here
+      }
+
       router.push('/');
       return userCredential.user.uid;
     } catch (err: any) {
@@ -82,6 +123,7 @@ export const useAuth = () => {
   };
 
   return {
+    user,
     error,
     loading,
     resetEmailSent,
