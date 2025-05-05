@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { Textarea } from "@/app/components/ui/textarea"
 import { Input } from "@/app/components/ui/input"
 import { Upload, FileText, X, LinkIcon } from "lucide-react"
+import { useAuth } from "@/app/hooks/useAuth";
 
 interface Issue {
   description: string
@@ -44,53 +45,127 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isComparing, setIsComparing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [resumeError, setResumeError] = useState<string | null>(null)
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { user } = useAuth();
+
+  const handleResumeFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
+    if (file && file.type === "application/pdf") {
       setUploadedFile(file)
+      setResumeText('')
+      setResumeError(null)
+    } else if (file) {
+      setUploadedFile(null)
+      setResumeError("Please upload a PDF file for the resume.")
+      e.target.value = '';
     }
   }
 
-  const removeFile = () => {
+  const removeResumeFile = () => {
     setUploadedFile(null)
+    setResumeError(null)
   }
+
+  const FileDisplay = ({ file, onRemove }: { file: File | null, onRemove: () => void }) => {
+    if (!file) return null;
+    return (
+      <div className="mt-2 flex items-center justify-between p-2 border rounded-md bg-gray-50 w-full max-w-full">
+        <div className="flex items-center space-x-2 text-sm overflow-hidden mr-2">
+          <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
+          <span className="truncate" title={file.name}>{file.name}</span>
+          <span className="text-gray-400 text-xs flex-shrink-0 whitespace-nowrap">({(file.size / 1024).toFixed(1)} KB)</span>
+        </div>
+        <Button variant="ghost" size="icon" onClick={onRemove} className="hover:bg-red-100 hover:text-red-600 flex-shrink-0 h-6 w-6">
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
 
   const compareResumeToJob = async () => {
     setIsComparing(true)
     setError(null)
 
-    const resumeContent = uploadedFile ? await uploadedFile.text() : resumeText
-    const jobDescriptionContent = jobDescriptionLink || jobDescription
+    if (!user) {
+      setError("Please sign in to compare your resume.");
+      setIsComparing(false);
+      return;
+    }
+
+    const firebaseId = user.uid;
+
+    const resumeInputProvided = !!uploadedFile || !!resumeText.trim();
+    const jobInputProvided = !!jobDescription.trim() || !!jobDescriptionLink.trim();
+
+    if (uploadedFile && resumeError) {
+      setError("Please upload a valid PDF file for the resume or clear the selection.");
+      setIsComparing(false);
+      return;
+    }
+    if (!resumeInputProvided) {
+      setError("Please provide resume content (upload PDF or paste text).");
+      setIsComparing(false);
+      return;
+    }
+    if (!jobInputProvided) {
+      setError("Please provide job description content (paste text or link).");
+      setIsComparing(false);
+      return;
+    }
+
+    const jobContent = jobDescriptionLink || jobDescription;
+    let fetchOptions: RequestInit = { method: "POST" };
+
+    if (uploadedFile) {
+      const formData = new FormData();
+      formData.append('firebase_id', firebaseId);
+      formData.append('file', uploadedFile);
+      fetchOptions.body = formData;
+    } else {
+      fetchOptions.headers = { 'Content-Type': 'application/json' };
+      fetchOptions.body = JSON.stringify({
+        resumeText: resumeText,
+        jobDescription: jobContent,
+      });
+    }
 
     try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          resumeText: resumeContent,
-          jobDescription: jobDescriptionContent,
-        }),
-      })
+      const resumeUploadResponse = await fetch("http://localhost:3001/api/v1/user/upload-resume", fetchOptions);
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      if (!resumeUploadResponse.ok) {
+        const errorData = await resumeUploadResponse.json().catch(() => ({ error: 'Failed to parse error response' }));
+        throw new Error(errorData.error || `HTTP error! status: ${resumeUploadResponse.status}`)
       }
 
-      const data = await response.json()
-      onScoreUpdate(
-        data.matchRate,
-        data.categories,
-        data.matchedKeywords,
-        resumeText,
-        jobDescription
-      )
+      const upload_data = await resumeUploadResponse.json();
+      const resume_id = upload_data.resumeId;
+
+      const optimizeResponse = await fetch('http://localhost:3001/api/v1/ai/optimize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          resume_id: resume_id,
+          job_description: jobContent,
+        }),
+      });
+
+      const optimize_data = await optimizeResponse.json();
+      console.log(optimize_data);
+
+      // const data = await response.json()
+      // onScoreUpdate(
+      //   data.matchRate,
+      //   data.categories,
+      //   data.matchedKeywords,
+      //   resumeText,
+      //   jobDescription
+      // );
     } catch (err) {
       console.error("Error analyzing resume:", err)
-      setError(`An error occurred while analyzing the resume: ${err instanceof Error ? err.message : "Unknown error"}`)
+      setError(`An error occurred during analysis: ${err instanceof Error ? err.message : "Unknown error"}`)
     } finally {
       setIsComparing(false)
     }
@@ -103,27 +178,66 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               Resume
-              {resumeText && (
+              {(resumeText.trim() || uploadedFile) && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => setResumeText('')}
+                  onClick={() => { 
+                    setResumeText(''); 
+                    removeResumeFile(); 
+                    setResumeError(null); 
+                    const fileInput = document.getElementById('resume-upload') as HTMLInputElement;
+                    if(fileInput) fileInput.value = '';
+                  }}
                   className="hover:bg-purple-100 hover:text-purple-600"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4 mr-1" /> Clear
                 </Button>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col h-full">
-              <Textarea
-                placeholder="Paste resume text..."
-                className="min-h-[300px] h-full"
-                value={resumeText}
-                onChange={(e) => setResumeText(e.target.value)}
-              />
-            </div>
+            <Tabs defaultValue="upload" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload">Upload PDF</TabsTrigger>
+                <TabsTrigger value="text">Paste Text</TabsTrigger>
+              </TabsList>
+              <TabsContent value="upload">
+                <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-md p-6 min-h-[300px] space-y-2">
+                  <Upload className="h-10 w-10 text-gray-400" />
+                  <Input
+                    id="resume-upload"
+                    type="file"
+                    className="hidden"
+                    onChange={handleResumeFileUpload}
+                    accept="application/pdf"
+                  />
+                  <label
+                    htmlFor="resume-upload"
+                    className="cursor-pointer text-sm text-blue-600 hover:underline font-medium bg-gray-100 px-4 py-2 rounded-md hover:bg-gray-200"
+                  >
+                    Choose PDF File
+                  </label>
+                  <p className="text-xs text-gray-500">Upload your resume as a PDF</p>
+                  {resumeError && <p className="text-red-500 text-sm mt-1 text-center">{resumeError}</p>}
+                  {!resumeError && <FileDisplay file={uploadedFile} onRemove={removeResumeFile} />}
+                </div>
+              </TabsContent>
+              <TabsContent value="text">
+                <Textarea
+                  placeholder="Paste resume text here..."
+                  className="min-h-[300px] h-full"
+                  value={resumeText}
+                  onChange={(e) => {
+                    setResumeText(e.target.value);
+                    if (uploadedFile) removeResumeFile();
+                    if (resumeError) setResumeError(null);
+                  }}
+                  disabled={!!uploadedFile && !resumeError}
+                />
+                {resumeError && !uploadedFile && <p className="text-red-500 text-sm mt-1">{resumeError}</p>}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
         <Card className="md:col-span-1">
@@ -157,8 +271,8 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
       <div className="flex flex-col items-center space-y-4">
         <Button
           onClick={compareResumeToJob}
-          disabled={isComparing || (!resumeText && !uploadedFile) || (!jobDescription && !jobDescriptionLink)}
-          className="w-full max-w-md bg-black hover:bg-black/90 text-white relative overflow-hidden"
+          disabled={!user || isComparing || (!uploadedFile && !resumeText.trim()) || (!jobDescription.trim() && !jobDescriptionLink.trim()) || !!resumeError}
+          className="w-full max-w-md bg-black hover:bg-black/90 text-white relative overflow-hidden disabled:opacity-50"
         >
           {isComparing ? (
             <>
@@ -171,8 +285,8 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
             "Compare Resume to Job Description"
           )}
         </Button>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {(error || resumeError) && <p className="text-red-500 text-sm text-center mt-2">{error || resumeError}</p>}
       </div>
     </div>
   )
-} 
+}
