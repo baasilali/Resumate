@@ -23,30 +23,21 @@ interface MatchedKeyword {
 
 export default function GetStarted() {
   const [formStep, setFormStep] = useState(1);
-  const [score, setScore] = useState(0);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [matchedKeywords, setMatchedKeywords] = useState<MatchedKeyword[]>([]);
+  const [optimizationJson, setOptimizationJson] = useState<string>('');
   const [resumeText, setResumeText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
 
   const handleScoreUpdate = (
-    newScore: number,
-    newCategories: Category[],
-    newMatchedKeywords: MatchedKeyword[],
-    savedResumeText: string,
-    savedJobDescription: string
+    optimizeDataString: string
   ) => {
-    setScore(newScore);
-    setCategories(newCategories);
-    setMatchedKeywords(newMatchedKeywords);
-    setResumeText(savedResumeText);
-    setJobDescription(savedJobDescription);
+    setOptimizationJson(optimizeDataString);
     setFormStep(2);
   };
 
   const handleRescan = () => {
     setFormStep(1);
-    setJobDescription('');
+    // ResumeUpload component receives initial text, so clearing state here might not be needed
+    // depending on desired behavior when rescanning.
   };
 
   const renderForm = () => {
@@ -65,9 +56,7 @@ export default function GetStarted() {
         return (
           <div className="w-full">
             <ResumeScore 
-              matchRate={score} 
-              categories={categories} 
-              matchedKeywords={matchedKeywords}
+              optimize={optimizationJson} 
               onRescan={handleRescan}
             />
           </div>

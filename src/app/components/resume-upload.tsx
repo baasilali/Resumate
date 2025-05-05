@@ -28,11 +28,7 @@ interface MatchedKeyword {
 
 interface ResumeUploadProps {
   onScoreUpdate: (
-    score: number,
-    categories: Category[],
-    matchedKeywords: MatchedKeyword[],
-    resumeText: string,
-    jobDescription: string
+    optimized: string,
   ) => void;
   initialResumeText?: string;
   initialJobDescription?: string;
@@ -153,18 +149,27 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
       });
 
       const optimize_data = await optimizeResponse.json();
-      console.log(optimize_data);
 
-      // const data = await response.json()
-      // onScoreUpdate(
-      //   data.matchRate,
-      //   data.categories,
-      //   data.matchedKeywords,
-      //   resumeText,
-      //   jobDescription
-      // );
+      if (!optimizeResponse.ok) {
+        // Handle error from the optimize API call
+        throw new Error(optimize_data.error || `Optimize API error! status: ${optimizeResponse.status}`);
+      }
+
+      // --- Process and Pass Data ---
+      const changesData = optimize_data?.changes_accumulated; // Safely access the data
+
+      if (typeof changesData === 'object' && changesData !== null) {
+        const optimizeJsonString = JSON.stringify(changesData);
+        onScoreUpdate(optimizeJsonString); // Pass the stringified JSON
+      } else {
+        // Handle cases where changes_accumulated is missing or not an object
+        console.error("Optimization data 'changes_accumulated' is missing or not an object:", optimize_data);
+        setError("Received invalid optimization data structure from the server.");
+        console.log("Calling onScoreUpdate with fallback '{}'");
+        onScoreUpdate('{}'); // Pass an empty object string as fallback
+      }
     } catch (err) {
-      console.error("Error analyzing resume:", err)
+      console.error("Error during analysis process:", err); // Log the full error
       setError(`An error occurred during analysis: ${err instanceof Error ? err.message : "Unknown error"}`)
     } finally {
       setIsComparing(false)
