@@ -7,7 +7,8 @@ import {
   sendPasswordResetEmail,
   UserCredential,
   onAuthStateChanged, 
-  User 
+  User,
+  getAuth
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { useRouter } from 'next/navigation';
@@ -43,48 +44,41 @@ export const useAuth = () => {
   };
 
   const signUpWithEmail = async (email: string, password: string): Promise<string | undefined> => {
+    setLoading(true);
+    setError('');
     try {
-      setLoading(true);
-      setError('');
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const userId = userCredential.user.uid;
-      try {
-        const response = await fetch('http://localhost:3001/api/v1/user/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firebase_id: userId,
-            email: email, // email is available from component state
-          }),
-        });
+      const user = userCredential.user;
+      const userId = user.uid;
 
-        if (!response.ok) {
-          // Handle non-successful responses (e.g., 4xx, 5xx)
-          const errorData = await response.json();
-          console.error('Error creating user in backend:', response.status, errorData);
-          // Optionally set an error state here to show feedback to the user
-        } else {
-          const result = await response.json();
-          console.log('Backend user creation successful:', result);
-          // Handle successful backend response (e.g., maybe navigate or show success message)
-        }
-      } catch (error) {
-        console.error('Network error or issue making POST request:', error);
-        // Optionally set an error state here
+      const idToken = await user.getIdToken();
+
+      const response = await fetch('http://localhost:3001/api/v1/user/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          email: email,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error creating user in backend:', response.status, errorData);
+        setError(`Backend error: ${errorData.message || response.statusText}`);
+        return undefined;
       }
 
+      const result = await response.json();
+      console.log('Backend user creation successful:', result);
       router.push('/');
-      return userCredential.user.uid;
+      return userId;
+
     } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
-        setError('An account with this email already exists');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password should be at least 6 characters');
-      } else {
-        setError(err.message || 'An error occurred during sign up');
-      }
+      console.error("Firebase signup error:", err);
+      setError(err.message || 'An error occurred during sign up');
       return undefined;
     } finally {
       setLoading(false);
