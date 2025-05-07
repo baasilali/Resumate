@@ -137,14 +137,18 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
       const upload_data = await resumeUploadResponse.json();
       const resume_id = upload_data.resumeId;
 
+      const idToken = await user.getIdToken();
+
       const optimizeResponse = await fetch('http://localhost:3001/api/v1/ai/optimize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
         },
         body: JSON.stringify({
           resume_id: resume_id,
           job_description: jobContent,
+          firebase_id: firebaseId,
         }),
       });
 
