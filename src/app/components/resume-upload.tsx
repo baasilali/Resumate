@@ -110,16 +110,24 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
       return;
     }
 
+    const idToken = await user.getIdToken();
+
     const jobContent = jobDescriptionLink || jobDescription;
     let fetchOptions: RequestInit = { method: "POST" };
 
     if (uploadedFile) {
+      console.log("Uploading file...");
       const formData = new FormData();
-      formData.append('firebase_id', firebaseId);
+      fetchOptions.headers = { 
+        'Authorization': `Bearer ${idToken}`
+      };
       formData.append('file', uploadedFile);
       fetchOptions.body = formData;
     } else {
-      fetchOptions.headers = { 'Content-Type': 'application/json' };
+      fetchOptions.headers = { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      };
       fetchOptions.body = JSON.stringify({
         resumeText: resumeText,
         jobDescription: jobContent,
@@ -136,8 +144,6 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
 
       const upload_data = await resumeUploadResponse.json();
       const resume_id = upload_data.resumeId;
-
-      const idToken = await user.getIdToken();
 
       const optimizeResponse = await fetch('http://localhost:3001/api/v1/ai/optimize', {
         method: 'POST',
