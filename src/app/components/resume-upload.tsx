@@ -297,7 +297,7 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
               </div>
             </>
           ) : (
-            "Compare Resume to Job Description"
+            "Optimize Resume"
           )}
         </Button>
         {(error || resumeError) && <p className="text-red-500 text-sm text-center mt-2">{error || resumeError}</p>}
