@@ -139,7 +139,7 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
 
       if (!resumeUploadResponse.ok) {
         const errorData = await resumeUploadResponse.json().catch(() => ({ error: 'Failed to parse error response' }));
-        throw new Error(errorData.error || `HTTP error! status: ${resumeUploadResponse.status}`)
+        throw new Error(errorData.error || `HTTP error! status: ${resumeUploadResponse.status} - Message: ${errorData.message}`)
       }
 
       const upload_data = await resumeUploadResponse.json();
