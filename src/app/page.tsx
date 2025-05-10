@@ -5,6 +5,9 @@ import Link from 'next/link';
 import NavBar from './components/NavBar';
 import { Typewriter } from 'react-simple-typewriter';
 import { useAuth } from './hooks/useAuth';
+import { PricingSection } from '@/components/pricing/pricing-section';
+import ContactSection from '@/components/contact/contact-section';
+import { FiUpload, FiTarget, FiLayout, FiShield } from 'react-icons/fi';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -47,34 +50,57 @@ export default function Home() {
                     onLoopDone={() => console.log('Done with loop!')}
                   />
                 </div>
-                <Link href={getStartedLink} legacyBehavior>
-                  <a className={`ml-4 px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600 focus:outline-none whitespace-nowrap no-underline ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <Link href="/signup" legacyBehavior>
+                  <a className="ml-4 px-6 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 focus:outline-none whitespace-nowrap no-underline">
                     Get Started
                   </a>
                 </Link>
               </div>
             </div>
           </div>
-          <div className="lg:w-5/12 flex justify-center lg:justify-start mt-2">
+          <div className="lg:w-7/12 flex justify-center lg:justify-end">
             <Image src="/HomePageGraphic.svg" alt="SVG illustration" width={500} height={400} />
           </div>
         </div>
-        <div id="features" className="w-full text-center mt-0">
-          <div className="flex flex-col items-center mt-10">
-            <h2 className="text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-0">
-              Features
+        <div id="features" className="w-full py-24 bg-white">
+          <div className="max-w-4xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-14">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">Features</span>
             </h2>
-            <Image src="/Features.svg" alt="Features illustration" width={1800} height={1300} className="mt-[-200px]" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              {/* Feature 1 */}
+              <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-10 flex flex-col items-center transition-all hover:shadow-pink-100 hover:border-pink-400">
+                <FiUpload size={40} className="mb-6 text-pink-500 transition-colors group-hover:text-pink-600" />
+                <h3 className="font-semibold text-lg mb-2 text-center">Upload Any Format</h3>
+                <p className="text-gray-500 text-sm text-center">Upload your resume as PDF, image, or text for instant parsing.</p>
+              </div>
+              {/* Feature 2 */}
+              <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-10 flex flex-col items-center transition-all hover:shadow-purple-100 hover:border-purple-400">
+                <FiTarget size={40} className="mb-6 text-purple-500 transition-colors group-hover:text-purple-600" />
+                <h3 className="font-semibold text-lg mb-2 text-center">AI Role Matching</h3>
+                <p className="text-gray-500 text-sm text-center">Get tailored suggestions for specific jobs using AI.</p>
+              </div>
+              {/* Feature 3 */}
+              <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-10 flex flex-col items-center transition-all hover:shadow-pink-100 hover:border-pink-400">
+                <FiLayout size={40} className="mb-6 text-pink-500 transition-colors group-hover:text-pink-600" />
+                <h3 className="font-semibold text-lg mb-2 text-center">Beautiful Templates</h3>
+                <p className="text-gray-500 text-sm text-center">Choose from modern, recruiter-approved templates.</p>
+              </div>
+              {/* Feature 4 */}
+              <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-10 flex flex-col items-center transition-all hover:shadow-purple-100 hover:border-purple-400">
+                <FiShield size={40} className="mb-6 text-purple-500 transition-colors group-hover:text-purple-600" />
+                <h3 className="font-semibold text-lg mb-2 text-center">Secure & Private</h3>
+                <p className="text-gray-500 text-sm text-center">Your data is encrypted and never shared without your consent.</p>
+              </div>
+            </div>
           </div>
         </div>
-        {/* <div id="pricing" className="w-full text-center mt-40">
-          <div className="flex flex-col items-center mt-10">
-            <h2 className="text-2xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-0">
-              Pricing
-            </h2>
-            <Image src="/Pricing.svg" alt="Features illustration" width={1800} height={1300} className="mt-[-200px]" />
-          </div>
-        </div> */}
+        <div id="pricing" className="w-full">
+          <PricingSection />
+        </div>
+        <div id="contact" className="w-full">
+          <ContactSection />
+        </div>
       </main>
     </>
   );
