@@ -47,21 +47,6 @@ export default function NavBar() {
   return (
     <nav className="w-full bg-white border-b border-gray-200 relative">
       <div className="container mx-auto flex items-center justify-between p-4">
-<<<<<<< HEAD
-        <Link href="/" legacyBehavior>
-          <a className="flex items-center space-x-4 no-underline">
-            <Image src="/Resumate.svg" alt="Logo" width={40} height={40} />
-            <span className="ml-2 text-xl font-medium text-black hover:text-gray-700 transition-colors">Resumate</span>
-          </a>
-        </Link>
-
-        <div className="flex items-center space-x-4">
-          {!loading && !user && isLandingPage && (
-            <Link href="/signin" legacyBehavior>
-              <a className={primaryButtonStyle.replace('w-full text-left', '') + " no-underline"}>
-                Sign In
-              </a>
-=======
         <div className="flex items-center space-x-4">
           <Link href="/" legacyBehavior>
             <a>
@@ -83,98 +68,93 @@ export default function NavBar() {
         </div>
         {isLandingPage && (
           <div className="flex space-x-4">
-            <Link href="/GetStarted" legacyBehavior>
-              <a className="px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600 no-underline">Get Started</a>
->>>>>>> pricing
-            </Link>
-          )}
-          
-          <div className="relative" ref={dropdownRef}>
-            {!loading && user && (
-              <div 
-                className="w-8 h-8 rounded-full overflow-hidden cursor-pointer border border-gray-200 mr-2 inline-block align-middle"
-                onClick={() => setIsOpen(!isOpen)}
-              >
-                {user.photoURL ? (
-                  <Image
-                    src={user.photoURL}
-                    alt="Profile"
-                    width={32}
-                    height={32}
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
-                    {user.email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                )}
-              </div>
-            )}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 hover:bg-gray-100 rounded-md inline-block align-middle"
-              aria-label="Menu"
-            >
-              <svg
-                className="w-6 h-6 text-gray-700"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
-            </button>
-
-            {isOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                <div className="px-2 py-1">
-                  {user && (
-                    <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200 mb-1">
-                      {user.email}
+            <div className="relative" ref={dropdownRef}>
+              {!loading && user && (
+                <div 
+                  className="w-8 h-8 rounded-full overflow-hidden cursor-pointer border border-gray-200 mr-2 inline-block align-middle"
+                  onClick={() => setIsOpen(!isOpen)}
+                >
+                  {user.photoURL ? (
+                    <Image
+                      src={user.photoURL}
+                      alt="Profile"
+                      width={32}
+                      height={32}
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
+                      {user.email?.charAt(0).toUpperCase() || 'U'}
                     </div>
                   )}
-                  <Link 
-                    href="/" 
-                    className={lightButtonStyle + " mb-1 block"}
-                  >
-                    Home
-                  </Link>
-                  <button 
-                    onClick={() => scrollToSection('features')} 
-                    className={lightButtonStyle + " mb-1"}
-                  >
-                    Features
-                  </button>
-                  <a 
-                    href="mailto:resumateservice@gmail.com" 
-                    className={lightButtonStyle + " mb-1 block"}
-                  >
-                    Contact Us
-                  </a>
-                  {!loading && user && (
-                    <>
-                      <Link 
-                        href="/profile" 
-                        className={lightButtonStyle + " mb-1 block"}
-                      >
-                        Profile
-                      </Link>
-                      <button
-                        onClick={handleSignOut}
-                        className={primaryButtonStyle}
-                      >
-                        Sign Out
-                      </button>
-                    </>
-                  )}
                 </div>
-              </div>
-            )}
+              )}
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-2 hover:bg-gray-100 rounded-md inline-block align-middle"
+                aria-label="Menu"
+              >
+                <svg
+                  className="w-6 h-6 text-gray-700"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+              </button>
+
+              {isOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                  <div className="px-2 py-1">
+                    {user && (
+                      <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200 mb-1">
+                        {user.email}
+                      </div>
+                    )}
+                    <Link 
+                      href="/" 
+                      className={lightButtonStyle + " mb-1 block"}
+                    >
+                      Home
+                    </Link>
+                    <button 
+                      onClick={() => scrollToSection('features')} 
+                      className={lightButtonStyle + " mb-1"}
+                    >
+                      Features
+                    </button>
+                    <a 
+                      href="mailto:resumateservice@gmail.com" 
+                      className={lightButtonStyle + " mb-1 block"}
+                    >
+                      Contact Us
+                    </a>
+                    {!loading && user && (
+                      <>
+                        <Link 
+                          href="/profile" 
+                          className={lightButtonStyle + " mb-1 block"}
+                        >
+                          Profile
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className={primaryButtonStyle}
+                        >
+                          Sign Out
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </nav>
   );

@@ -12,7 +12,7 @@ import { FiUpload, FiTarget, FiLayout, FiShield } from 'react-icons/fi';
 export default function Home() {
   const { user, loading } = useAuth();
 
-  const getStartedLink = loading ? '#' : user ? '/GetStarted' : '/signin';
+  const getStartedLink = loading ? '#' : user ? '/GetStarted' : '/signup';
 
   return (
     <>
@@ -50,7 +50,7 @@ export default function Home() {
                     onLoopDone={() => console.log('Done with loop!')}
                   />
                 </div>
-                <Link href="/signup" legacyBehavior>
+                <Link href={getStartedLink} legacyBehavior>
                   <a className="ml-4 px-6 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 focus:outline-none whitespace-nowrap no-underline">
                     Get Started
                   </a>
