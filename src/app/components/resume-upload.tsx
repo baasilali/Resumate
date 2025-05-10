@@ -135,7 +135,21 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
     }
 
     try {
-      const resumeUploadResponse = await fetch("http://localhost:3001/api/v1/user/upload-resume", fetchOptions);
+      const validateSubscription = await fetch("http://localhost:3001/api/v1/user/validate_membership", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firebase_id: firebaseId,
+        }),
+      });
+
+      if (!validateSubscription.ok) {
+        throw new Error("Subscription validation failed");
+      }
+      
+      const resumeUploadResponse = await fetch("http://localhost:3001/api/v1/user/upload_resume", fetchOptions);
 
       if (!resumeUploadResponse.ok) {
         const errorData = await resumeUploadResponse.json().catch(() => ({ error: 'Failed to parse error response' }));

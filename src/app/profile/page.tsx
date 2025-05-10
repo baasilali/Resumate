@@ -5,6 +5,7 @@ import { useUser } from '../hooks/useUser';
 import { useAuth } from '../hooks/useAuth';
 import NavBarGetStarted from '../components/NavBarGetStarted';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface DbUserData {
   _id: string;
@@ -12,8 +13,11 @@ interface DbUserData {
   email: string;
   credits: number;
   membership: string;
-  __v: number;
+  subscription: string;
+  stripe_subscription_id: string;
+  subscription_end: Date | string | null;
   resumeFileId?: string;
+  __v?: number;
 }
 
 export default function Profile() {
@@ -67,6 +71,27 @@ export default function Profile() {
       await resetPassword(user.email);
     }
   };
+
+  const handleCancelSubscription = async () => {
+    if (!user) {
+      console.log("No user found");
+      return;
+    }
+
+    const res = await fetch("http://localhost:3001/api/v1/payment/cancel_subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firebase_id: user.uid,
+      }),
+    });
+
+    if (!res.ok) {
+      console.log(res);
+      console.log("Error canceling subscription");
+      return;
+    }
+  }
 
   if (userLoading || (dbLoading && user)) {
     return (
@@ -130,21 +155,36 @@ export default function Profile() {
             {dbUserData && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Current Plan</label>
+                  <div className="flex items-center">
+                    <label className="block text-sm font-medium text-gray-700">Current Plan</label>
+                    {dbUserData.subscription === 'cancelled' && dbUserData.subscription_end && (
+                      <span className="ml-2 text-xs text-red-600 font-medium">
+                        (Renews until: {new Date(dbUserData.subscription_end).toLocaleDateString()})
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-1 text-gray-900 capitalize">{dbUserData.membership.replace('_', ' ') || 'N/A'}</p>
-                  <p className="mt-1 text-sm text-gray-500">{dbUserData.credits} Credits Remaining</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {(dbUserData.membership === 'monthly_unlimited' && dbUserData.subscription !== 'cancelled' && dbUserData.subscription !== 'inactive') ? <span className="text-lg">∞</span> : dbUserData.credits} Credits Remaining
+                  </p>
                 </div>
                 
                 <div className="border-t pt-4">
-                  <button
-                    className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-md hover:from-pink-600 hover:to-purple-600"
-                    onClick={() => router.push('/#pricing')}
-                  >
-                    {dbUserData.membership === 'monthly_unlimited' ? 'Manage Subscription' : 'Upgrade to Unlimited'}
-                  </button>
-                  <p className="mt-2 text-sm text-gray-500">
-                    {dbUserData.membership === 'monthly_unlimited' ? 'Manage your current subscription.' : 'Get unlimited access to all features'}
-                  </p>
+                  {dbUserData.subscription === 'active' && (
+                    <button
+                      className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-md hover:from-pink-600 hover:to-purple-600"
+                      onClick={handleCancelSubscription}>
+                        Cancel Subscription
+                    </button>
+                  )}
+                  {dbUserData.subscription !== 'active' && (
+                    <Link href="/#pricing">
+                        <button
+                        className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-md hover:from-pink-600 hover:to-purple-600">
+                          Upgrade to Unlimited
+                      </button>
+                    </Link>
+                  )}
                 </div>
               </div>
             )}
