@@ -51,14 +51,14 @@ export function PricingSection() {
 
   const selectedPackage = creditPackages.find(pkg => pkg.credits === selectedCredits) || creditPackages[1];
 
-  const startPlan = async () => {
+  const handleMakePayment = async () => {
 
     if (!user) {
       console.log("No user found");
       return;
     }
 
-    const res = await fetch('http://localhost:3001/api/v1/payment/create', {
+    const res = await fetch('http://localhost:3001/api/v1/payment/create_payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -76,6 +76,32 @@ export function PricingSection() {
     const data = await res.json();
     setClientSecret(data.clientSecret);
     setShowPaymentForm(true);
+  };
+
+  const handleStartPlan = async () => {
+    if (!user) {
+      console.log("No user found");
+      return;
+    }
+
+    const res = await fetch("http://localhost:3001/api/v1/payment/create_subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firebase_id: user.uid,
+        membership: "monthly_unlimited",
+      }),
+    });
+
+    if (!res.ok) {
+      console.log(res);
+      console.log("Error creating payment intent");
+      return;
+    }
+  
+    const { sessionId } = await res.json();
+    const stripe = await stripePromise;
+    await stripe?.redirectToCheckout({ sessionId });
   };
 
   // New inner component for the Stripe Payment Form
@@ -229,7 +255,7 @@ export function PricingSection() {
               ))}
             </ul>
 
-            <button onClick={startPlan} className="mt-auto w-full py-2.5 px-4 bg-white border-2 border-purple-500 text-purple-500 rounded-lg font-semibold hover:bg-purple-50 transition-all duration-200 text-sm">
+            <button onClick={handleStartPlan} className="mt-auto w-full py-2.5 px-4 bg-white border-2 border-purple-500 text-purple-500 rounded-lg font-semibold hover:bg-purple-50 transition-all duration-200 text-sm">
               Start Monthly Plan
             </button>
             {showPaymentForm && clientSecret && (
