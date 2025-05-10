@@ -45,25 +45,22 @@ const subscriptionPlan = {
 export function PricingSection() {
   const [selectedCredits, setSelectedCredits] = useState(10);
   const [isPro, setIsPro] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const { user, loading } = useAuth();
 
   const selectedPackage = creditPackages.find(pkg => pkg.credits === selectedCredits) || creditPackages[1];
 
-  const handleMakePayment = async () => {
-
+  const handleCreditPurchase = async () => {
     if (!user) {
       console.log("No user found");
       return;
     }
 
-    const res = await fetch('http://localhost:3001/api/v1/payment/create_payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("http://localhost:3001/api/v1/payment/create_payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         firebase_id: user.uid,
-        membership: 'monthly_unlimited',
+        credits: selectedCredits,
       }),
     });
 
@@ -72,13 +69,13 @@ export function PricingSection() {
       console.log("Error creating payment intent");
       return;
     }
-
-    const data = await res.json();
-    setClientSecret(data.clientSecret);
-    setShowPaymentForm(true);
+  
+    const { sessionId } = await res.json();
+    const stripe = await stripePromise;
+    await stripe?.redirectToCheckout({ sessionId });
   };
 
-  const handleStartPlan = async () => {
+  const handlePlanPurchase = async () => {
     if (!user) {
       console.log("No user found");
       return;
@@ -103,54 +100,6 @@ export function PricingSection() {
     const stripe = await stripePromise;
     await stripe?.redirectToCheckout({ sessionId });
   };
-
-  // New inner component for the Stripe Payment Form
-  function StripePaymentForm() {
-    const stripeHook = useStripe();
-    const elementsHook = useElements();
-
-    const handlePaymentSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!stripeHook || !elementsHook) {
-        console.log("Stripe.js has not yet loaded or Elements context is missing.");
-        return;
-      }
-
-      const { error, paymentIntent } = await stripeHook.confirmPayment({
-        elements: elementsHook,
-        confirmParams: {
-          return_url: `${window.location.origin}/GetStarted`,
-        },
-        redirect: 'if_required',
-      });
-
-      if (error) {
-        alert(error.message);
-        console.error(error.message);
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        console.log("Payment Succeeded on client-side. PaymentIntent:", paymentIntent);
-        alert("Payment Successful!");
-        // TODO: Add any post-success UI updates or navigation here
-        setShowPaymentForm(false); // Optionally hide the form
-      } else if (paymentIntent) {
-        console.log("PaymentIntent status:", paymentIntent.status);
-        // Handle other statuses if necessary (e.g., processing)
-      }
-    };
-
-    return (
-      <form onSubmit={handlePaymentSubmit} className="mt-4 space-y-4">
-        <PaymentElement id="payment-element" />
-        <button
-          type="submit"
-          disabled={!stripeHook || !elementsHook}
-          className="w-full py-2.5 px-4 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all duration-200 text-sm shadow-lg shadow-green-500/20"
-        >
-          Pay Now
-        </button>
-      </form>
-    );
-  }
 
   return (
     <section className="py-12 px-4 relative overflow-hidden">
@@ -219,7 +168,7 @@ export function PricingSection() {
               </p>
             </div>
 
-            <button className="mt-auto w-full py-2.5 px-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg font-semibold hover:from-pink-600 hover:to-purple-600 transition-all duration-200 shadow-lg shadow-purple-500/20 text-sm">
+            <button onClick={handleCreditPurchase} className="mt-auto w-full py-2.5 px-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg font-semibold hover:from-pink-600 hover:to-purple-600 transition-all duration-200 shadow-lg shadow-purple-500/20 text-sm">
               Buy Credits
             </button>
           </motion.div>
@@ -255,14 +204,9 @@ export function PricingSection() {
               ))}
             </ul>
 
-            <button onClick={handleStartPlan} className="mt-auto w-full py-2.5 px-4 bg-white border-2 border-purple-500 text-purple-500 rounded-lg font-semibold hover:bg-purple-50 transition-all duration-200 text-sm">
+            <button onClick={handlePlanPurchase} className="mt-auto w-full py-2.5 px-4 bg-white border-2 border-purple-500 text-purple-500 rounded-lg font-semibold hover:bg-purple-50 transition-all duration-200 text-sm">
               Start Monthly Plan
             </button>
-            {showPaymentForm && clientSecret && (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <StripePaymentForm />
-              </Elements>
-            )}
           </motion.div>
         </div>
 
