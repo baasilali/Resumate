@@ -51,7 +51,7 @@ export default function Home() {
                   />
                 </div>
                 <Link href={getStartedLink} legacyBehavior>
-                  <a className="ml-4 px-6 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 focus:outline-none whitespace-nowrap no-underline">
+                  <a className={`ml-4 px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600 focus:outline-none whitespace-nowrap no-underline ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     Get Started
                   </a>
                 </Link>
