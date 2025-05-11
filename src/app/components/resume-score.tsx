@@ -121,14 +121,18 @@ export function ResumeScore({ onRescan }: ResumeScoreProps) {
         <CardTitle>Optimized Resume Suggestions</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {pdfBlob && !isLoadingPdf && !pdfError && (
-          <div className="mb-4 flex justify-center">
-            <Button onClick={handleDownload} variant="outline" size="sm">
+        {/* Container for Download and Rescan buttons */}
+        <div className="mb-4 flex justify-center items-center space-x-4"> 
+          {pdfBlob && !isLoadingPdf && !pdfError && (
+            <Button onClick={handleDownload} variant="outline" size="sm" className="bg-gradient-to-r from-pink-500 to-purple-500 text-white">
               <Download className="mr-2 h-4 w-4" />
               Download PDF
             </Button>
-          </div>
-        )}
+          )}
+          <Button size="sm" className="bg-black hover:bg-black/90 text-white" onClick={onRescan}>
+            Make Changes & Rescan
+          </Button>
+        </div>
 
         {isLoadingPdf && (
           <div className="flex justify-center items-center h-96">
@@ -188,12 +192,6 @@ export function ResumeScore({ onRescan }: ResumeScoreProps) {
          {!user?.uid && !userLoading && (
             <p className="text-center text-gray-500 py-10">Please sign in to view your optimized resume.</p>
         )}
-
-        <div className="mt-6 flex justify-center border-t pt-6">
-          <Button className="bg-black hover:bg-black/90 text-white" onClick={onRescan}>
-            Make Changes & Rescan
-          </Button>
-        </div>
       </CardContent>
     </Card>
   )
