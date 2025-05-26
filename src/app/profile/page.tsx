@@ -31,7 +31,7 @@ export default function Profile() {
 
   // Redirect if not logged in
   if (!userLoading && !user) {
-    router.push('/signin');
+    router.push('/');
     return null;
   }
 

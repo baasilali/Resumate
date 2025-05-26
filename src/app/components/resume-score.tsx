@@ -45,23 +45,27 @@ export function ResumeScore({ onRescan }: ResumeScoreProps) {
           });
 
           if (!response.ok) {
-            let errorMsg = `Failed to fetch PDF: ${response.status} ${response.statusText}`;
+            console.error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
             try {
                 const errData = await response.json();
-                errorMsg = errData.message || errorMsg;
+                console.error("Backend error message:", errData.message);
             } catch (e) { /* Ignore if error response is not JSON */ }
-            throw new Error(errorMsg);
+            // User-friendly message:
+            throw new Error("We couldn't load your optimized resume right now. Please check your internet connection or try again in a few moments.");
           }
 
           const blob = await response.blob();
           if (blob.type !== 'application/pdf') {
-            throw new Error("Retrieved file is not a PDF. Please check the backend.");
+            console.error("Retrieved file is not a PDF. Type:", blob.type);
+            // User-friendly message:
+            throw new Error("The optimized resume file we received doesn't seem to be a standard PDF. Our team has been notified, please try rescanning or check back later.");
           }
           setPdfBlob(blob);
           setPdfUrl(URL.createObjectURL(blob));
         } catch (error: any) {
-          console.error("Error fetching or processing PDF:", error);
-          setPdfError(error.message || "An unexpected error occurred while loading the PDF.");
+          console.error("Error fetching or processing PDF:", error.message); // Log the original error for dev
+          // User-friendly message for any caught error during fetch/process:
+          setPdfError(error.message.startsWith("We couldn't load") || error.message.startsWith("The optimized resume file") ? error.message : "Oops! Something went wrong while preparing your optimized resume for display. Please try again.");
         } finally {
           setIsLoadingPdf(false);
         }
@@ -99,7 +103,7 @@ export function ResumeScore({ onRescan }: ResumeScoreProps) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } else {
-      // Optionally, re-fetch if blob isn't available
+      // This message is already user-friendly
       setPdfError("PDF data is not available for download. Please try again.");
     }
   };
@@ -153,11 +157,12 @@ export function ResumeScore({ onRescan }: ResumeScoreProps) {
                 file={pdfUrl}
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={(err) => {
-                    console.error("React-PDF Document Load Error:", err);
-                    setPdfError(`Failed to load PDF document: ${err.message}. Ensure the PDF worker is set up correctly and the file is not corrupted.`);
+                    console.error("React-PDF Document Load Error:", err.message); // Log original for dev
+                    // User-friendly message:
+                    setPdfError("We had trouble displaying your optimized resume. It might be a temporary hiccup, or there could be an issue with the file itself. You could try rescanning, or check back in a bit.");
                 }}
                 loading={<div className="p-4 text-center">Loading document...</div>}
-                error={<div className="p-4 text-center text-red-500">Error loading PDF document.</div>}
+                error={<div className="p-4 text-center text-red-500">Error loading PDF document. (This text is from react-pdf, consider custom error component if needed)</div>}
               >
                 <Page 
                   pageNumber={pageNumber} 

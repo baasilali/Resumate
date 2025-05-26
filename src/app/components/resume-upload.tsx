@@ -95,7 +95,7 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
     const jobInputProvided = !!jobDescription.trim() || !!jobDescriptionLink.trim();
 
     if (uploadedFile && resumeError) {
-      setError("Please upload a valid PDF file for the resume or clear the selection.");
+      setError("The resume file you selected doesn't seem to be a valid PDF. Please choose a PDF file or clear the selection.");
       setIsComparing(false);
       return;
     }
@@ -146,14 +146,16 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
       });
 
       if (!validateSubscription.ok) {
-        throw new Error("Subscription validation failed");
+        console.error("Subscription validation failed. Status:", validateSubscription.status);
+        throw new Error("We couldn't verify your subscription status. Purchase a membership or contact support if the issue persists.");
       }
       
       const resumeUploadResponse = await fetch("http://localhost:3001/api/v1/user/upload_resume", fetchOptions);
 
       if (!resumeUploadResponse.ok) {
-        const errorData = await resumeUploadResponse.json().catch(() => ({ error: 'Failed to parse error response' }));
-        throw new Error(errorData.error || `HTTP error! status: ${resumeUploadResponse.status} - Message: ${errorData.message}`)
+        const errorData = await resumeUploadResponse.json().catch(() => ({ message: 'Could not parse error from server' }));
+        console.error("Resume upload failed. Status:", resumeUploadResponse.status, "Message:", errorData.message);
+        throw new Error(errorData.message && !errorData.message.includes("status:") ? `Upload error: ${errorData.message}` : "We had trouble uploading your resume. Please try again. If it happens again, the file might be too large or in an unexpected format.");
       }
 
       const upload_data = await resumeUploadResponse.json();
@@ -175,26 +177,28 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
       const optimize_data = await optimizeResponse.json();
 
       if (!optimizeResponse.ok) {
-        // Handle error from the optimize API call
-        throw new Error(optimize_data.error || `Optimize API error! status: ${optimizeResponse.status}`);
+        console.error("Optimize API error. Status:", optimizeResponse.status, "Data:", optimize_data);
+        throw new Error(optimize_data.message);
       }
 
-      // --- Process and Pass Data ---
-      const changesData = optimize_data?.changes_accumulated; // Safely access the data
+      const changesData = optimize_data?.changes_accumulated;
 
       if (typeof changesData === 'object' && changesData !== null) {
         const optimizeJsonString = JSON.stringify(changesData);
-        onScoreUpdate(optimizeJsonString); // Pass the stringified JSON
+        onScoreUpdate(optimizeJsonString);
       } else {
-        // Handle cases where changes_accumulated is missing or not an object
         console.error("Optimization data 'changes_accumulated' is missing or not an object:", optimize_data);
-        setError("Received invalid optimization data structure from the server.");
+        setError("The optimization suggestions from the server couldn't be read correctly. Please try rescanning.");
         console.log("Calling onScoreUpdate with fallback '{}'");
-        onScoreUpdate('{}'); // Pass an empty object string as fallback
+        onScoreUpdate('{}');
       }
-    } catch (err) {
-      console.error("Error during analysis process:", err); // Log the full error
-      setError(`An error occurred during analysis: ${err instanceof Error ? err.message : "Unknown error"}`)
+    } catch (err: any) {
+      console.error("Error during analysis process:", err.message);
+      if (err.message && (err.message.startsWith("We couldn't") || err.message.startsWith("The resume file") || err.message.startsWith("Upload error:") || err.message.startsWith("We had trouble") || err.message.startsWith("We encountered"))) {
+        setError(err.message);
+      } else {
+        setError("An unexpected problem occurred while analyzing your resume. Please check your details and try again.");
+      }
     } finally {
       setIsComparing(false)
     }
@@ -314,7 +318,7 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
             "Optimize Resume"
           )}
         </Button>
-        {(error || resumeError) && <p className="text-red-500 text-sm text-center mt-2">{error || resumeError}</p>}
+        {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
       </div>
     </div>
   )
