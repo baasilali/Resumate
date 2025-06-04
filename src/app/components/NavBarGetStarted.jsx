@@ -108,12 +108,6 @@ export default function NavBarGetStarted() {
                   >
                     Home
                   </Link>
-                  <a 
-                    href="mailto:resumateservice@gmail.com" 
-                    className={lightButtonStyle + " mb-1 block"}
-                  >
-                    Contact Us
-                  </a>
                   {!loading && user && (
                     <>
                       <Link 
