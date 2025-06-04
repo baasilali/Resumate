@@ -23,21 +23,45 @@ interface MatchedKeyword {
 
 export default function GetStarted() {
   const [formStep, setFormStep] = useState(1);
-  const [optimizationJson, setOptimizationJson] = useState<string>('');
+  const [matchRate, setMatchRate] = useState<number>(0);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [matchedKeywords, setMatchedKeywords] = useState<MatchedKeyword[]>([]);
   const [resumeText, setResumeText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
+  const [atsData, setAtsData] = useState<{
+    score: number;
+    matched_keywords: string[];
+    missing_keywords: string[];
+  } | undefined>(undefined);
 
   const handleScoreUpdate = (
-    optimizeDataString: string
+    score: number,
+    categoriesData: Category[],
+    matchedKeywordsData: MatchedKeyword[],
+    resumeContent: string,
+    jobContent: string,
+    atsDataParam?: {
+      score: number;
+      matched_keywords: string[];
+      missing_keywords: string[];
+    }
   ) => {
-    setOptimizationJson(optimizeDataString);
+    setMatchRate(score);
+    setCategories(categoriesData);
+    setMatchedKeywords(matchedKeywordsData);
+    setResumeText(resumeContent);
+    setJobDescription(jobContent);
+    setAtsData(atsDataParam || undefined);
     setFormStep(2);
   };
 
   const handleRescan = () => {
     setFormStep(1);
-    // ResumeUpload component receives initial text, so clearing state here might not be needed
-    // depending on desired behavior when rescanning.
+    // Reset data when rescanning
+    setMatchRate(0);
+    setCategories([]);
+    setMatchedKeywords([]);
+    setAtsData(undefined);
   };
 
   const renderForm = () => {
@@ -56,8 +80,12 @@ export default function GetStarted() {
         return (
           <div className="w-full">
             <ResumeScore 
-              optimize={optimizationJson} 
+              matchRate={matchRate}
+              categories={categories}
+              matchedKeywords={matchedKeywords}
+              jobDescription={jobDescription}
               onRescan={handleRescan}
+              atsData={atsData}
             />
           </div>
         );
@@ -71,7 +99,7 @@ export default function GetStarted() {
       <NavBar2 />
       <main className="flex flex-col items-center justify-center min-h-screen bg-white w-full py-10">
         <div className="container mx-auto flex flex-col items-center space-y-10">
-          <div className="w-full max-w-4xl">
+          <div className="w-full max-w-6xl">
             {renderForm()}
           </div>
         </div>

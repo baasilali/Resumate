@@ -153,10 +153,10 @@ export default function Profile() {
             {dbError && <p className="text-red-500">Error loading plan details: {dbError}</p>}
             {!dbUserData && !dbError && !dbLoading && <p>No plan information found.</p>}
             {dbUserData && (
-              <div className="space-y-4">
-                <div>
+            <div className="space-y-4">
+              <div>
                   <div className="flex items-center">
-                    <label className="block text-sm font-medium text-gray-700">Current Plan</label>
+                <label className="block text-sm font-medium text-gray-700">Current Plan</label>
                     {dbUserData.subscription === 'cancelled' && dbUserData.subscription_end && (
                       <span className="ml-2 text-xs text-red-600 font-medium">
                         (Renews until: {new Date(dbUserData.subscription_end).toLocaleDateString()})
@@ -167,12 +167,12 @@ export default function Profile() {
                   <p className="mt-1 text-sm text-gray-500">
                     {(dbUserData.membership === 'monthly_unlimited' && dbUserData.subscription !== 'cancelled' && dbUserData.subscription !== 'inactive') ? <span className="text-lg">∞</span> : dbUserData.credits} Credits Remaining
                   </p>
-                </div>
-                
-                <div className="border-t pt-4">
+              </div>
+              
+              <div className="border-t pt-4">
                   {dbUserData.subscription === 'active' && (
-                    <button
-                      className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-md hover:from-pink-600 hover:to-purple-600"
+                <button
+                  className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-md hover:from-pink-600 hover:to-purple-600"
                       onClick={handleCancelSubscription}>
                         Cancel Subscription
                     </button>
@@ -181,8 +181,8 @@ export default function Profile() {
                     <Link href="/#pricing">
                         <button
                         className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-md hover:from-pink-600 hover:to-purple-600">
-                          Upgrade to Unlimited
-                      </button>
+                  Upgrade to Unlimited
+                </button>
                     </Link>
                   )}
                 </div>

@@ -237,95 +237,193 @@ function extractSkillsWithContext(text: string): Array<{skill: string, context: 
   return consolidateTerms(skills)
 }
 
+interface Issue {
+  description: string
+}
+
+interface Category {
+  name: string
+  score: number
+  issues: Issue[]
+}
+
+interface MatchedKeyword {
+  keyword: string
+  context: string
+  category: string
+}
+
 // Main API handler
 export async function POST(req: NextRequest) {
   try {
     const { resumeText, jobDescription } = await req.json()
 
     if (!resumeText || !jobDescription) {
-      return NextResponse.json({ error: "Both resume and job description are required" }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Both resume text and job description are required' },
+        { status: 400 }
+      )
     }
 
-    console.log("✅ Resume and Job Description received. Processing...")
+    // Simulate analysis (in a real app, this would call an AI service)
+    const analysisResult = simulateResumeAnalysis(resumeText, jobDescription)
 
-    // Extract skills with context from both texts
-    const resumeSkills = extractSkillsWithContext(resumeText)
-    const jobSkills = extractSkillsWithContext(jobDescription)
-
-    // Find matched and missed skills
-    const matchedSkills = jobSkills.filter(jobSkill => 
-      resumeSkills.some(resumeSkill => 
-        findFuzzyMatches(jobSkill.skill, [resumeSkill.skill]).length > 0
-      )
-    )
-
-    const missedSkills = jobSkills.filter(jobSkill => 
-      !resumeSkills.some(resumeSkill => 
-        findFuzzyMatches(jobSkill.skill, [resumeSkill.skill]).length > 0
-      )
-    )
-
-    // Categorize missed skills
-    const missingHardSkills = missedSkills.filter(skill => skill.category === "hard")
-    const missingSoftSkills = missedSkills.filter(skill => skill.category === "soft")
-    const missingExperienceTerms = missedSkills.filter(skill => skill.category === "experience")
-    const missingEducationTerms = missedSkills.filter(skill => skill.category === "education")
-
-    // Calculate scores with context consideration
-    const hardSkillsScore = Math.max(10 - missingHardSkills.length, 0) * 10
-    const softSkillsScore = Math.max(10 - missingSoftSkills.length, 0) * 10
-    const experienceScore = Math.max(10 - missingExperienceTerms.length, 0) * 10
-    const educationScore = Math.max(10 - missingEducationTerms.length, 0) * 10
-
-    const analysisResult = {
-      matchRate: Math.round((matchedSkills.length / jobSkills.length) * 100),
-      categories: [
-        {
-          name: "Hard Skills",
-          score: hardSkillsScore,
-          issues: missingHardSkills.map(skill => ({
-            description: `Missing: ${skill.skill} (Context: ${skill.context})`
-          }))
-        },
-        {
-          name: "Soft Skills",
-          score: softSkillsScore,
-          issues: missingSoftSkills.map(skill => ({
-            description: `Missing: ${skill.skill} (Context: ${skill.context})`
-          }))
-        },
-        {
-          name: "Experience",
-          score: experienceScore,
-          issues: missingExperienceTerms.map(skill => ({
-            description: `Missing: ${skill.skill} (Context: ${skill.context})`
-          }))
-        },
-        {
-          name: "Education",
-          score: educationScore,
-          issues: missingEducationTerms.map(skill => ({
-            description: `Missing: ${skill.skill} (Context: ${skill.context})`
-          }))
-        }
-      ],
-      matchedKeywords: matchedSkills.map(skill => ({
-        keyword: skill.skill,
-        context: skill.context,
-        category: skill.category
-      }))
-    }
-
-    console.log("📊 Analysis Completed. Sending response...")
-    return NextResponse.json(analysisResult, { status: 200 })
+    return NextResponse.json(analysisResult)
   } catch (error) {
-    console.error("❌ API Error:", error)
-
-    let errorMessage = "Unknown error occurred"
-    if (error instanceof Error) {
-      errorMessage = error.message
-    }
-
-    return NextResponse.json({ error: "Failed to analyze resume", details: errorMessage }, { status: 500 })
+    console.error('Error analyzing resume:', error)
+    return NextResponse.json(
+      { error: 'Failed to analyze resume' },
+      { status: 500 }
+    )
   }
+}
+
+function simulateResumeAnalysis(resumeText: string, jobDescription: string) {
+  // Simple keyword matching simulation
+  const jobKeywords = extractKeywords(jobDescription)
+  const resumeKeywords = extractKeywords(resumeText)
+  
+  const matchedKeywords: MatchedKeyword[] = []
+  const hardSkillsIssues: Issue[] = []
+  const softSkillsIssues: Issue[] = []
+  const experienceIssues: Issue[] = []
+  const educationIssues: Issue[] = []
+
+  // Common tech keywords for simulation
+  const commonTechSkills = ['javascript', 'python', 'react', 'node.js', 'sql', 'aws', 'docker', 'git']
+  const commonSoftSkills = ['leadership', 'communication', 'teamwork', 'problem-solving', 'analytical']
+  const commonExperience = ['project management', 'agile', 'scrum', 'development', 'engineering']
+  const commonEducation = ['bachelor', 'master', 'degree', 'certification', 'training']
+
+  let totalMatches = 0
+  let totalPossibleMatches = 0
+
+  // Check for hard skills
+  commonTechSkills.forEach(skill => {
+    if (jobKeywords.includes(skill)) {
+      totalPossibleMatches++
+      if (resumeKeywords.includes(skill)) {
+        totalMatches++
+        matchedKeywords.push({
+          keyword: skill,
+          context: `Found in resume: relevant ${skill} experience`,
+          category: 'Hard Skills'
+        })
+      } else {
+        hardSkillsIssues.push({
+          description: `Missing: ${skill} (Context: Required technical skill for this role)`
+        })
+      }
+    }
+  })
+
+  // Check for soft skills
+  commonSoftSkills.forEach(skill => {
+    if (jobKeywords.includes(skill)) {
+      totalPossibleMatches++
+      if (resumeKeywords.includes(skill)) {
+        totalMatches++
+        matchedKeywords.push({
+          keyword: skill,
+          context: `Demonstrated ${skill} abilities in resume`,
+          category: 'Soft Skills'
+        })
+      } else {
+        softSkillsIssues.push({
+          description: `Missing: ${skill} (Context: Important interpersonal skill for this position)`
+        })
+      }
+    }
+  })
+
+  // Check for experience keywords
+  commonExperience.forEach(exp => {
+    if (jobKeywords.includes(exp)) {
+      totalPossibleMatches++
+      if (resumeKeywords.includes(exp)) {
+        totalMatches++
+        matchedKeywords.push({
+          keyword: exp,
+          context: `Relevant ${exp} experience found`,
+          category: 'Experience'
+        })
+      } else {
+        experienceIssues.push({
+          description: `Missing: ${exp} (Context: Relevant experience requirement)`
+        })
+      }
+    }
+  })
+
+  // Check for education keywords
+  commonEducation.forEach(edu => {
+    if (jobKeywords.includes(edu)) {
+      totalPossibleMatches++
+      if (resumeKeywords.includes(edu)) {
+        totalMatches++
+        matchedKeywords.push({
+          keyword: edu,
+          context: `Educational background matches requirement`,
+          category: 'Education'
+        })
+      } else {
+        educationIssues.push({
+          description: `Missing: ${edu} (Context: Educational requirement for this role)`
+        })
+      }
+    }
+  })
+
+  // Calculate match rate
+  const matchRate = totalPossibleMatches > 0 ? Math.round((totalMatches / totalPossibleMatches) * 100) : 75
+
+  // Calculate category scores
+  const hardSkillsScore = calculateCategoryScore(commonTechSkills, jobKeywords, resumeKeywords)
+  const softSkillsScore = calculateCategoryScore(commonSoftSkills, jobKeywords, resumeKeywords)
+  const experienceScore = calculateCategoryScore(commonExperience, jobKeywords, resumeKeywords)
+  const educationScore = calculateCategoryScore(commonEducation, jobKeywords, resumeKeywords)
+
+  const categories: Category[] = [
+    {
+      name: 'Hard Skills',
+      score: hardSkillsScore,
+      issues: hardSkillsIssues
+    },
+    {
+      name: 'Soft Skills',
+      score: softSkillsScore,
+      issues: softSkillsIssues
+    },
+    {
+      name: 'Experience',
+      score: experienceScore,
+      issues: experienceIssues
+    },
+    {
+      name: 'Education',
+      score: educationScore,
+      issues: educationIssues
+    }
+  ]
+
+  return {
+    matchRate,
+    categories,
+    matchedKeywords
+  }
+}
+
+function extractKeywords(text: string): string[] {
+  return text.toLowerCase()
+    .replace(/[^\w\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 2)
+}
+
+function calculateCategoryScore(categorySkills: string[], jobKeywords: string[], resumeKeywords: string[]): number {
+  const relevantSkills = categorySkills.filter(skill => jobKeywords.includes(skill))
+  if (relevantSkills.length === 0) return 100 // If no skills in this category are required, score is 100%
+  
+  const matchedSkills = relevantSkills.filter(skill => resumeKeywords.includes(skill))
+  return Math.round((matchedSkills.length / relevantSkills.length) * 100)
 } 

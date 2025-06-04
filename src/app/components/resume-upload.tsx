@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { Textarea } from "@/app/components/ui/textarea"
 import { Input } from "@/app/components/ui/input"
 import { Upload, FileText, X, LinkIcon } from "lucide-react"
-import { useAuth } from "@/app/hooks/useAuth";
+import { useUser } from '../hooks/useUser'
 
 interface Issue {
   description: string
@@ -28,7 +28,16 @@ interface MatchedKeyword {
 
 interface ResumeUploadProps {
   onScoreUpdate: (
-    optimized: string,
+    score: number,
+    categories: Category[],
+    matchedKeywords: MatchedKeyword[],
+    resumeText: string,
+    jobDescription: string,
+    atsData?: {
+      score: number;
+      matched_keywords: string[];
+      missing_keywords: string[];
+    }
   ) => void;
   initialResumeText?: string;
   initialJobDescription?: string;
@@ -39,45 +48,50 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
   const [jobDescription, setJobDescription] = useState(initialJobDescription)
   const [jobDescriptionLink, setJobDescriptionLink] = useState("")
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [extractedText, setExtractedText] = useState<string>("")
   const [isComparing, setIsComparing] = useState(false)
+  const [isExtracting, setIsExtracting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [resumeError, setResumeError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<string>("text")
 
-  const { user } = useAuth();
+  const { user } = useUser();
 
-  const handleResumeFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file && file.type === "application/pdf") {
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        setError('Please upload a PDF file only.')
+        return
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size must be less than 10MB.')
+        return
+      }
+
       setUploadedFile(file)
-      setResumeText('')
-      setResumeError(null)
-    } else if (file) {
-      setUploadedFile(null)
-      setResumeError("Please upload a PDF file for the resume.")
-      e.target.value = '';
+      setError(null)
+      setIsExtracting(true)
+
+      try {
+        // For now, we'll upload the PDF to the backend and extract text there
+        // This maintains compatibility with the existing backend
+        setExtractedText("PDF file selected - text will be extracted during analysis")
+      } catch (err) {
+        console.error('Error handling PDF file:', err)
+        setError('We couldn\'t process your PDF file. Please make sure it\'s a valid PDF, or try using the text input option instead.')
+        setUploadedFile(null)
+      } finally {
+        setIsExtracting(false)
+      }
     }
   }
 
-  const removeResumeFile = () => {
+  const removeFile = () => {
     setUploadedFile(null)
-    setResumeError(null)
+    setExtractedText('')
+    setError(null)
   }
-
-  const FileDisplay = ({ file, onRemove }: { file: File | null, onRemove: () => void }) => {
-    if (!file) return null;
-    return (
-      <div className="mt-2 flex items-center justify-between p-2 border rounded-md bg-gray-50 w-full max-w-full">
-        <div className="flex items-center space-x-2 text-sm overflow-hidden mr-2">
-          <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
-          <span className="truncate" title={file.name}>{file.name}</span>
-          <span className="text-gray-400 text-xs flex-shrink-0 whitespace-nowrap">({(file.size / 1024).toFixed(1)} KB)</span>
-        </div>
-        <Button variant="ghost" size="icon" onClick={onRemove} className="hover:bg-red-100 hover:text-red-600 flex-shrink-0 h-6 w-6">
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-    );
-  };
 
   const compareResumeToJob = async () => {
     setIsComparing(true)
@@ -89,120 +103,118 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
       return;
     }
 
-    const firebaseId = user.uid;
+    // Get resume content based on active tab
+    const resumeContent = activeTab === 'upload' ? (uploadedFile ? "" : "") : resumeText
+    const jobDescriptionContent = jobDescriptionLink || jobDescription
 
-    const resumeInputProvided = !!uploadedFile || !!resumeText.trim();
-    const jobInputProvided = !!jobDescription.trim() || !!jobDescriptionLink.trim();
-
-    if (uploadedFile && resumeError) {
-      setError("The resume file you selected doesn't seem to be a valid PDF. Please choose a PDF file or clear the selection.");
-      setIsComparing(false);
-      return;
-    }
-    if (!resumeInputProvided) {
-      setError("Please provide resume content (upload PDF or paste text).");
-      setIsComparing(false);
-      return;
-    }
-    if (!jobInputProvided) {
-      setError("Please provide job description content (paste text or link).");
-      setIsComparing(false);
-      return;
+    if (!resumeContent.trim() && !uploadedFile) {
+      setError('Please provide your resume content.')
+      setIsComparing(false)
+      return
     }
 
-    const idToken = await user.getIdToken();
-
-    const jobContent = jobDescriptionLink || jobDescription;
-    let fetchOptions: RequestInit = { method: "POST" };
-
-    if (uploadedFile) {
-      console.log("Uploading file...");
-      const formData = new FormData();
-      fetchOptions.headers = { 
-        'Authorization': `Bearer ${idToken}`
-      };
-      formData.append('file', uploadedFile);
-      fetchOptions.body = formData;
-    } else {
-      fetchOptions.headers = { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`
-      };
-      fetchOptions.body = JSON.stringify({
-        resumeText: resumeText,
-        jobDescription: jobContent,
-      });
+    if (!jobDescriptionContent.trim()) {
+      setError('Please provide the job description.')
+      setIsComparing(false)
+      return
     }
 
     try {
-      const validateSubscription = await fetch("http://localhost:3001/api/v1/user/validate_membership", {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firebase_id: firebaseId,
-        }),
-      });
+      const idToken = await user.getIdToken();
 
-      if (!validateSubscription.ok) {
-        console.error("Subscription validation failed. Status:", validateSubscription.status);
-        throw new Error("We couldn't verify your subscription status. Purchase a membership or contact support if the issue persists.");
+      // Upload resume to backend first (either file or text)
+      if (uploadedFile) {
+        // Upload PDF file
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+
+        const uploadResponse = await fetch("http://localhost:3001/api/v1/user/upload_resume", {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: formData
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json().catch(() => ({ message: 'Could not parse error from server' }));
+          throw new Error(errorData.message || 'Failed to upload resume file');
+        }
+      } else if (resumeText.trim()) {
+        const uploadResponse = await fetch("http://localhost:3001/api/v1/user/upload_resume", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            text: resumeText
+          })
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json().catch(() => ({ message: 'Could not parse error from server' }));
+          throw new Error(errorData.message || 'Failed to upload resume text');
+        }
       }
-      
-      const resumeUploadResponse = await fetch("http://localhost:3001/api/v1/user/upload_resume", fetchOptions);
 
-      if (!resumeUploadResponse.ok) {
-        const errorData = await resumeUploadResponse.json().catch(() => ({ message: 'Could not parse error from server' }));
-        console.error("Resume upload failed. Status:", resumeUploadResponse.status, "Message:", errorData.message);
-        throw new Error(errorData.message && !errorData.message.includes("status:") ? `Upload error: ${errorData.message}` : "We had trouble uploading your resume. Please try again. If it happens again, the file might be too large or in an unexpected format.");
-      }
-
-      const upload_data = await resumeUploadResponse.json();
-      const resume_id = upload_data.resumeId;
-
-      const optimizeResponse = await fetch('http://localhost:3001/api/v1/ai/optimize', {
+      // Call the ATS endpoint
+      const atsResponse = await fetch('http://localhost:3001/api/v1/ai/ats', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
         body: JSON.stringify({
-          resume_id: resume_id,
-          job_description: jobContent,
-          firebase_id: firebaseId,
+          firebase_id: user.uid,
+          job_description: jobDescriptionContent
         }),
       });
 
-      const optimize_data = await optimizeResponse.json();
-
-      if (!optimizeResponse.ok) {
-        console.error("Optimize API error. Status:", optimizeResponse.status, "Data:", optimize_data);
-        throw new Error(optimize_data.message);
+      if (!atsResponse.ok) {
+        const errorData = await atsResponse.json().catch(() => ({ message: 'Could not parse error from server' }));
+        throw new Error(errorData.message || 'Failed to analyze resume');
       }
 
-      const changesData = optimize_data?.changes_accumulated;
+      const atsData = await atsResponse.json();
+      
+      // Create mock categories for compatibility
+      const mockCategories = [
+        { name: 'Hard Skills', score: atsData.message.ats.score, issues: [] },
+        { name: 'Soft Skills', score: atsData.message.ats.score, issues: [] },
+        { name: 'Experience', score: atsData.message.ats.score, issues: [] },
+        { name: 'Education', score: atsData.message.ats.score, issues: [] }
+      ];
 
-      if (typeof changesData === 'object' && changesData !== null) {
-        const optimizeJsonString = JSON.stringify(changesData);
-        onScoreUpdate(optimizeJsonString);
-      } else {
-        console.error("Optimization data 'changes_accumulated' is missing or not an object:", optimize_data);
-        setError("The optimization suggestions from the server couldn't be read correctly. Please try rescanning.");
-        console.log("Calling onScoreUpdate with fallback '{}'");
-        onScoreUpdate('{}');
-      }
-    } catch (err: any) {
-      console.error("Error during analysis process:", err.message);
-      if (err.message && (err.message.startsWith("We couldn't") || err.message.startsWith("The resume file") || err.message.startsWith("Upload error:") || err.message.startsWith("We had trouble") || err.message.startsWith("We encountered"))) {
-        setError(err.message);
-      } else {
-        setError("An unexpected problem occurred while analyzing your resume. Please check your details and try again.");
-      }
+      // Create mock matched keywords for compatibility
+      const mockMatchedKeywords = atsData.message.ats.matched_keywords.map((keyword: string) => ({
+        keyword,
+        context: `Found relevant experience with ${keyword}`,
+        category: 'Technical Skills'
+      }));
+
+      onScoreUpdate(
+        atsData.message.ats.score,
+        mockCategories,
+        mockMatchedKeywords,
+        resumeContent,
+        jobDescriptionContent,
+        {
+          score: atsData.message.ats.score,
+          matched_keywords: atsData.message.ats.matched_keywords,
+          missing_keywords: atsData.message.ats.missing_keywords
+        }
+      )
+    } catch (err) {
+      console.error("Error analyzing resume:", err)
+      setError('We couldn\'t analyze your resume right now. Please check your internet connection or try again in a few moments.')
     } finally {
       setIsComparing(false)
     }
   }
+
+  const hasResumeContent = activeTab === 'upload' ? !!uploadedFile : !!resumeText.trim()
+  const hasJobContent = !!(jobDescriptionLink.trim() || jobDescription.trim())
 
   return (
     <div className="space-y-6">
@@ -211,68 +223,100 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               Resume
-              {(resumeText.trim() || uploadedFile) && (
+              {((activeTab === 'text' && resumeText) || (activeTab === 'upload' && uploadedFile)) && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => { 
-                    setResumeText(''); 
-                    removeResumeFile(); 
-                    setResumeError(null); 
-                    const fileInput = document.getElementById('resume-upload') as HTMLInputElement;
-                    if(fileInput) fileInput.value = '';
+                  onClick={() => {
+                    if (activeTab === 'text') {
+                      setResumeText('')
+                    } else {
+                      removeFile()
+                    }
                   }}
                   className="hover:bg-purple-100 hover:text-purple-600"
                 >
-                  <X className="h-4 w-4 mr-1" /> Clear
+                  <X className="h-4 w-4" />
                 </Button>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="upload" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="upload">Upload PDF</TabsTrigger>
-                <TabsTrigger value="text">Paste Text</TabsTrigger>
+                <TabsTrigger value="text" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Paste Text
+                </TabsTrigger>
+                <TabsTrigger value="upload" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload PDF
+                </TabsTrigger>
               </TabsList>
-              <TabsContent value="upload">
-                <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-md p-6 min-h-[300px] space-y-2">
-                  <Upload className="h-10 w-10 text-gray-400" />
-                  <Input
-                    id="resume-upload"
-                    type="file"
-                    className="hidden"
-                    onChange={handleResumeFileUpload}
-                    accept="application/pdf"
+              
+              <TabsContent value="text" className="mt-4">
+                <div className="flex flex-col h-full">
+                  <Textarea
+                    placeholder="Paste your resume text here..."
+                    className="min-h-[280px] h-full resize-none"
+                    value={resumeText}
+                    onChange={(e) => setResumeText(e.target.value)}
                   />
-                  <label
-                    htmlFor="resume-upload"
-                    className="cursor-pointer text-sm text-blue-600 hover:underline font-medium bg-gray-100 px-4 py-2 rounded-md hover:bg-gray-200"
-                  >
-                    Choose PDF File
-                  </label>
-                  <p className="text-xs text-gray-500">Upload your resume as a PDF</p>
-                  {resumeError && <p className="text-red-500 text-sm mt-1 text-center">{resumeError}</p>}
-                  {!resumeError && <FileDisplay file={uploadedFile} onRemove={removeResumeFile} />}
                 </div>
               </TabsContent>
-              <TabsContent value="text">
-                <Textarea
-                  placeholder="Paste resume text here..."
-                  className="min-h-[300px] h-full"
-                  value={resumeText}
-                  onChange={(e) => {
-                    setResumeText(e.target.value);
-                    if (uploadedFile) removeResumeFile();
-                    if (resumeError) setResumeError(null);
-                  }}
-                  disabled={!!uploadedFile && !resumeError}
-                />
-                {resumeError && !uploadedFile && <p className="text-red-500 text-sm mt-1">{resumeError}</p>}
+              
+              <TabsContent value="upload" className="mt-4">
+                <div className="flex flex-col h-full min-h-[280px]">
+                  {!uploadedFile ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-400 transition-colors">
+                      <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <p className="text-gray-600 mb-4">Drop your PDF here or click to browse</p>
+                      <Input
+                        type="file"
+                        accept=".pdf"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="pdf-upload"
+                        disabled={isExtracting}
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => document.getElementById('pdf-upload')?.click()}
+                        disabled={isExtracting}
+                        className="hover:bg-purple-100 hover:text-purple-600 hover:border-purple-600"
+                      >
+                        {isExtracting ? 'Processing...' : 'Choose PDF File'}
+                      </Button>
+                      <p className="text-xs text-gray-500 mt-2">PDF files only, max 10MB</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <FileText className="h-5 w-5 text-green-600" />
+                          <span className="text-sm font-medium text-green-800">{uploadedFile.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={removeFile}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-100"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-800">PDF ready for analysis. Click "Compare Resume to Job Description" to proceed.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
+        
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -301,11 +345,12 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
           </CardContent>
         </Card>
       </div>
+      
       <div className="flex flex-col items-center space-y-4">
         <Button
           onClick={compareResumeToJob}
-          disabled={!user || isComparing || (!uploadedFile && !resumeText.trim()) || (!jobDescription.trim() && !jobDescriptionLink.trim()) || !!resumeError}
-          className="w-full max-w-md bg-black hover:bg-black/90 text-white relative overflow-hidden disabled:opacity-50"
+          disabled={isComparing || !hasResumeContent || !hasJobContent || isExtracting || !user}
+          className="w-full max-w-md bg-black hover:bg-black/90 text-white relative overflow-hidden"
         >
           {isComparing ? (
             <>
@@ -315,10 +360,12 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
               </div>
             </>
           ) : (
-            "Optimize Resume"
+            "Compare Resume to Job Description"
           )}
         </Button>
-        {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-sm text-center max-w-md">{error}</p>
+        )}
       </div>
     </div>
   )
