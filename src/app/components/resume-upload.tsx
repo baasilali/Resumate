@@ -9,6 +9,7 @@ import { Textarea } from "@/app/components/ui/textarea"
 import { Input } from "@/app/components/ui/input"
 import { Upload, FileText, X, LinkIcon } from "lucide-react"
 import { useUser } from '../hooks/useUser'
+import { getBaseUrl } from '../../utils/getBaseUrl'
 
 interface Issue {
   description: string
@@ -53,6 +54,7 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
   const [isExtracting, setIsExtracting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<string>("text")
+  const baseUrl = getBaseUrl()
 
   const { user } = useUser();
 
@@ -128,7 +130,7 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
         const formData = new FormData();
         formData.append('file', uploadedFile);
 
-        const uploadResponse = await fetch("http://localhost:3001/api/v1/user/upload_resume", {
+        const uploadResponse = await fetch(`${baseUrl}/user/upload_resume`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${idToken}`
@@ -141,7 +143,7 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
           throw new Error(errorData.message || 'Failed to upload resume file');
         }
       } else if (resumeText.trim()) {
-        const uploadResponse = await fetch("http://localhost:3001/api/v1/user/upload_resume", {
+        const uploadResponse = await fetch(`${baseUrl}/user/upload_resume`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -159,7 +161,7 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
       }
 
       // Call the ATS endpoint
-      const atsResponse = await fetch('http://localhost:3001/api/v1/ai/ats', {
+      const atsResponse = await fetch(`${baseUrl}/ai/ats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

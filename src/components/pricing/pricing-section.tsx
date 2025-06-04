@@ -7,6 +7,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { motion } from "framer-motion";
 import { Check, Star, CreditCard, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getBaseUrl } from '@/utils/getBaseUrl';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -46,6 +47,7 @@ export function PricingSection() {
   const [selectedCredits, setSelectedCredits] = useState(10);
   const [isPro, setIsPro] = useState(false);
   const { user, loading } = useAuth();
+  const baseUrl = getBaseUrl();
 
   const selectedPackage = creditPackages.find(pkg => pkg.credits === selectedCredits) || creditPackages[1];
 
@@ -55,7 +57,7 @@ export function PricingSection() {
       return;
     }
 
-    const res = await fetch("http://localhost:3001/api/v1/payment/create_payment", {
+    const res = await fetch(`${baseUrl}/payment/create_payment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -81,7 +83,7 @@ export function PricingSection() {
       return;
     }
 
-    const res = await fetch("http://localhost:3001/api/v1/payment/create_subscription", {
+    const res = await fetch(`${baseUrl}/payment/create_subscription`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

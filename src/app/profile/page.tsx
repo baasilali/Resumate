@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import NavBarGetStarted from '../components/NavBarGetStarted';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getBaseUrl } from '../../utils/getBaseUrl';
 
 interface DbUserData {
   _id: string;
@@ -28,6 +29,7 @@ export default function Profile() {
   const [dbUserData, setDbUserData] = useState<DbUserData | null>(null);
   const [dbLoading, setDbLoading] = useState(true);
   const [dbError, setDbError] = useState<string | null>(null);
+  const baseUrl = getBaseUrl();
 
   // Redirect if not logged in
   if (!userLoading && !user) {
@@ -41,7 +43,7 @@ export default function Profile() {
         setDbLoading(true);
         setDbError(null);
         try {
-          const response = await fetch('http://localhost:3001/api/v1/user/get', {
+          const response = await fetch(`${baseUrl}/user/get`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -64,7 +66,7 @@ export default function Profile() {
     };
 
     fetchDbUserData();
-  }, [user?.uid]);
+  }, [user?.uid, baseUrl]);
 
   const handlePasswordReset = async () => {
     if (user?.email) {
@@ -78,7 +80,7 @@ export default function Profile() {
       return;
     }
 
-    const res = await fetch("http://localhost:3001/api/v1/payment/cancel_subscription", {
+    const res = await fetch(`${baseUrl}/payment/cancel_subscription`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

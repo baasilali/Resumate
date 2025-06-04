@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/ca
 import { Button } from "@/app/components/ui/button"
 import { Zap, ChevronDown, ChevronUp, Check, AlertCircle, X, Download, ChevronLeft, ChevronRight } from "lucide-react"
 import { Document, Page, pdfjs } from 'react-pdf'
+import { getBaseUrl } from '../../utils/getBaseUrl'
 
 // Explicitly set workerSrc to the path in the public folder
 pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`; 
@@ -49,6 +50,7 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
   const [animatedMatchRate, setAnimatedMatchRate] = useState(0)
   const [isAnimating, setIsAnimating] = useState(true)
   const [isOptimizationComplete, setIsOptimizationComplete] = useState(false)
+  const baseUrl = getBaseUrl();
 
   // PDF optimization state
   const [isOptimizing, setIsOptimizing] = useState(false)
@@ -138,7 +140,7 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
       const idToken = await user.getIdToken();
 
       // First validate subscription
-      const validateSubscription = await fetch("http://localhost:3001/api/v1/user/validate_membership", {
+      const validateSubscription = await fetch(`${baseUrl}/user/validate_membership`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +156,7 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
       }
 
       // Call the optimization API
-      const optimizeResponse = await fetch('http://localhost:3001/api/v1/ai/optimize', {
+      const optimizeResponse = await fetch(`${baseUrl}/ai/optimize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +175,7 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
       }
 
       // Now fetch the optimized PDF
-      const response = await fetch('http://localhost:3001/api/v1/user/retrieve_resume', {
+      const response = await fetch(`${baseUrl}/user/retrieve_resume`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { useRouter } from 'next/navigation';
+import { getBaseUrl } from '../../utils/getBaseUrl';
 
 export const useAuth = () => {
   const [error, setError] = useState<string>('');
@@ -50,10 +51,11 @@ export const useAuth = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       const userId = user.uid;
+      const baseUrl = getBaseUrl();
 
       const idToken = await user.getIdToken();
 
-      const response = await fetch('http://localhost:3001/api/v1/user/create', {
+      const response = await fetch(`${baseUrl}/user/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
