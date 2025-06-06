@@ -43,12 +43,13 @@ export default function Profile() {
         setDbLoading(true);
         setDbError(null);
         try {
+          const idToken = await user.getIdToken();
           const response = await fetch(`${baseUrl}/user/get`, {
-            method: 'POST',
+            method: 'GET',
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`,
             },
-            body: JSON.stringify({ firebase_id: user.uid }),
           });
           if (!response.ok) {
             const errorData = await response.json();
@@ -66,7 +67,7 @@ export default function Profile() {
     };
 
     fetchDbUserData();
-  }, [user?.uid, baseUrl]);
+  }, [user, baseUrl]);
 
   const handlePasswordReset = async () => {
     if (user?.email) {
@@ -80,12 +81,13 @@ export default function Profile() {
       return;
     }
 
+    const idToken = await user.getIdToken();
     const res = await fetch(`${baseUrl}/payment/cancel_subscription`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        firebase_id: user.uid,
-      }),
+      headers: { "Content-Type": "application/json",
+                 "Authorization": `Bearer ${idToken}` 
+                },
+      body: JSON.stringify({}),
     });
 
     if (!res.ok) {

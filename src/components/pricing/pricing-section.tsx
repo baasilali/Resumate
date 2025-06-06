@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { useAuth } from '@/app/hooks/useAuth';
-import { useStripe, useElements, PaymentElement, Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { motion } from "framer-motion";
 import { Check, Star, CreditCard, CalendarDays } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { getBaseUrl } from '@/utils/getBaseUrl';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -56,12 +54,13 @@ export function PricingSection() {
       console.log("No user found");
       return;
     }
-
+    const idToken = await user.getIdToken();
     const res = await fetch(`${baseUrl}/payment/create_payment`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",
+                 "Authorization": `Bearer ${idToken}`
+                },
       body: JSON.stringify({
-        firebase_id: user.uid,
         credits: selectedCredits,
       }),
     });
@@ -82,12 +81,13 @@ export function PricingSection() {
       console.log("No user found");
       return;
     }
-
+    const idToken = await user.getIdToken();
     const res = await fetch(`${baseUrl}/payment/create_subscription`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",
+                 "Authorization": `Bearer ${idToken}`
+                },
       body: JSON.stringify({
-        firebase_id: user.uid,
         membership: "monthly_unlimited",
       }),
     });

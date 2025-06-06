@@ -168,7 +168,6 @@ export function ResumeUpload({ onScoreUpdate, initialResumeText = '', initialJob
           'Authorization': `Bearer ${idToken}`
         },
         body: JSON.stringify({
-          firebase_id: user.uid,
           job_description: jobDescriptionContent
         }),
       });

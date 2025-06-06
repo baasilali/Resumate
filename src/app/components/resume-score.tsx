@@ -1,6 +1,7 @@
 'use client'; // Added for Next.js App Router compatibility with react-pdf worker
 
 import { useState, useEffect, useRef } from "react"
+import Link from 'next/link';
 import { useUser } from '../hooks/useUser'
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Button } from "@/app/components/ui/button"
@@ -55,6 +56,7 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
   // PDF optimization state
   const [isOptimizing, setIsOptimizing] = useState(false)
   const [optimizationError, setOptimizationError] = useState<string | null>(null)
+  const [showSubscribeButton, setShowSubscribeButton] = useState(false);
   const [showOptimizedPdf, setShowOptimizedPdf] = useState(false)
   
   // PDF display state
@@ -132,6 +134,7 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
 
     setIsOptimizing(true);
     setOptimizationError(null);
+    setShowSubscribeButton(false);
     setPdfUrl(null);
     setPdfBlob(null);
 
@@ -144,10 +147,9 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({
-          firebase_id: user.uid,
-        }),
+        body: JSON.stringify({}),
       });
 
       if (!validateSubscription.ok) {
@@ -163,12 +165,15 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
           'Authorization': `Bearer ${idToken}`
         },
         body: JSON.stringify({
-          firebase_id: user.uid,
           job_description: jobDescription,
         }),
       });
 
       if (!optimizeResponse.ok) {
+        if (optimizeResponse.status === 403) {
+          setShowSubscribeButton(true);
+          return;
+        }
         const errorData = await optimizeResponse.json().catch(() => ({ message: 'Could not parse error from server' }));
         console.error("Optimize API error. Status:", optimizeResponse.status, "Data:", errorData);
         throw new Error(errorData.message && !errorData.message.includes("status:") ? errorData.message : "We had trouble optimizing your resume. Please try again.");
@@ -176,11 +181,11 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
 
       // Now fetch the optimized PDF
       const response = await fetch(`${baseUrl}/user/retrieve_resume`, {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({ firebase_id: user.uid }),
       });
 
       if (!response.ok) {
@@ -309,15 +314,23 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
                     <Button className="w-full bg-black hover:bg-black/90 text-white" onClick={onRescan}>
                       Upload & rescan
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full hover:bg-purple-100 hover:text-purple-600 hover:border-purple-600"
-                      onClick={handleOptimizeResume}
-                      disabled={isOptimizing || !user || isOptimizationComplete}
-                    >
-                      <Zap className={`mr-2 h-4 w-4 ${isOptimizing ? 'animate-spin' : ''}`} />
-                      {isOptimizing ? 'Optimizing...' : isOptimizationComplete ? 'Optimized' : 'Optimize'}
-                    </Button>
+                    {showSubscribeButton ? (
+                        <Button asChild className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600">
+                            <Link href="/#pricing" className="no-underline">
+                                Subscribe to Optimize
+                            </Link>
+                        </Button>
+                    ) : (
+                        <Button 
+                          variant="outline" 
+                          className="w-full hover:bg-purple-100 hover:text-purple-600 hover:border-purple-600"
+                          onClick={handleOptimizeResume}
+                          disabled={isOptimizing || !user || isOptimizationComplete}
+                        >
+                          <Zap className={`mr-2 h-4 w-4 ${isOptimizing ? 'animate-spin' : ''}`} />
+                          {isOptimizing ? 'Optimizing...' : isOptimizationComplete ? 'Optimized' : 'Optimize'}
+                        </Button>
+                    )}
                   </div>
                 </div>
 
