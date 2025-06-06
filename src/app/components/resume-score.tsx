@@ -112,6 +112,36 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
     };
   }, [pdfUrl]);
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        try {
+          const idToken = await user.getIdToken();
+          const response = await fetch(`${getBaseUrl()}/user/get`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            if (userData.membership === 'free' && userData.credits <= 0) {
+              setShowSubscribeButton(true);
+            }
+          } else {
+            console.error("Failed to fetch user data");
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
+
   const toggleCategory = (categoryName: string) => {
     setOpenCategories((prev) =>
       prev.includes(categoryName) ? prev.filter((name) => name !== categoryName) : [...prev, categoryName],
@@ -149,7 +179,9 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          job_description: jobDescription,
+        }),
       });
 
       if (!validateSubscription.ok) {
@@ -171,7 +203,8 @@ export function ResumeScore({ matchRate, categories, matchedKeywords, jobDescrip
 
       if (!optimizeResponse.ok) {
         if (optimizeResponse.status === 403) {
-          setShowSubscribeButton(true);
+          const errorData = await optimizeResponse.json();
+          setOptimizationError(errorData.message || 'An error occurred');
           return;
         }
         const errorData = await optimizeResponse.json().catch(() => ({ message: 'Could not parse error from server' }));
