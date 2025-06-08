@@ -91,9 +91,39 @@ export const useAuth = () => {
     try {
       setLoading(true);
       setError('');
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.push('/');
+      try {
+        const provider = new GoogleAuthProvider();
+        const userCredential = await signInWithPopup(auth, provider);
+        const user = userCredential.user;
+        const baseUrl = getBaseUrl();
+
+        const idToken = await user.getIdToken();
+
+        const response = await fetch(`${baseUrl}/user/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            email: user.providerData[0].email,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error creating user in backend:', response.status, errorData);
+          setError(`Backend error: ${errorData.message || response.statusText}`);
+          return undefined;
+        }
+
+        const result = await response.json();
+        console.log('Backend user creation successful:', result);
+        router.push('/');
+      } catch (err: any) {
+        console.error("Google signin error:", err);
+        setError(err.message || 'An error occurred during Google sign in');
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred during Google sign in');
     } finally {
