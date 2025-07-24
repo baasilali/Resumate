@@ -8,9 +8,21 @@ import { useAuth } from './hooks/useAuth';
 import { PricingSection } from '@/components/pricing/pricing-section';
 import ContactSection from '@/components/contact/contact-section';
 import { FiUpload, FiTarget, FiLayout, FiShield } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const [isSmallScreen, setIsSmallScreen] = useState<boolean>(typeof window !== 'undefined' ? window.innerWidth < 640 : false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 640);
+    };
+
+    handleResize(); // initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const getStartedLink = loading ? '#' : user ? '/GetStarted' : '/signup';
 
@@ -20,9 +32,9 @@ export default function Home() {
       <main className="flex min-h-screen flex-col items-center justify-start bg-white w-full py-24">
         <div className="container mx-auto flex flex-col lg:flex-row items-center justify-center px-4 bg-white mb-40">
           <div className="text-center lg:text-left lg:w-5/12 space-y-4 mb-8 lg:mb-0">
-            <h1 className="text-5xl font-bold text-black leading-tight">
+            <p className="text-5xl font-bold text-black leading-tight">
               Customize your SWE <br /> resume <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">in seconds</span>
-            </h1>
+            </p>
             <p className="text-gray-700">
               Our AI is trained on thousands of resumes and allows you to <br /> create new resume for specific jobs
             </p>
@@ -37,19 +49,22 @@ export default function Home() {
               </li>
             </ul>
             <div className="mt-4 flex flex-col items-center lg:items-start space-y-2">
-              <div className="typewriter-container px-4 py-2 bg-gray-100 rounded-md flex items-center justify-between w-full lg:w-auto">
-                <div className="text-gray-700 text-lg" style={{ width: '340px', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
-                  Customize my resume for <Typewriter
-                    words={['Google', 'Netflix', 'Meta']}
-                    loop={5}
-                    cursor
-                    cursorStyle='|'
-                    typeSpeed={100}
-                    deleteSpeed={75}
-                    delaySpeed={1000}
-                    onLoopDone={() => console.log('Done with loop!')}
-                  />
-                </div>
+              <div className="typewriter-container px-4 py-2  rounded-md flex items-center justify-between w-full lg:w-auto">
+                {/* Only render Typewriter on screens >= sm */}
+                {!isSmallScreen && (
+                  <div className="text-gray-700 text-lg" style={{ width: '340px', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                    Customize my resume for <Typewriter
+                      words={['Google', 'Netflix', 'Meta']}
+                      loop={5}
+                      cursor
+                      cursorStyle='|'
+                      typeSpeed={100}
+                      deleteSpeed={75}
+                      delaySpeed={1000}
+                      onLoopDone={() => console.log('Done with loop!')}
+                    />
+                  </div>
+                )}
                 <Link href={getStartedLink} legacyBehavior>
                   <a className={`ml-4 px-4 py-2 text-white bg-gradient-to-r from-pink-500 to-purple-500 rounded-md hover:from-pink-600 hover:to-purple-600 focus:outline-none whitespace-nowrap no-underline ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     Get Started
